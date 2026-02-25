@@ -562,33 +562,33 @@ function renderEmailTable() {
     const finalTotal = includeTax ? totalWithTax : grandTotal;
 
     const tableHTML = `
-        <div style="border-top: 1px dashed #ccc; border-bottom: 1px dashed #ccc; padding: 15px 0;">
-            <table style="border-collapse: collapse; width: 100%; max-width: 650px; font-family: 'Segoe UI', Arial, sans-serif; font-size: 12px;">
+        <div style="border-top: 1px dashed #ccc; border-bottom: 1px dashed #ccc; padding: 15px 0; display:flex; justify-content:center;">
+            <table class="email-quote-table" style="border-collapse: collapse; width: 100%; max-width: 650px; font-family: 'Segoe UI', Arial, sans-serif; font-size: 12px;">
                 <thead>
                     <tr>
-                        <th style="border: 1px solid #e6e6e6; padding: 12px; background-color: #f8f9fa; text-align: left; color: #333;">Description</th>
-                        <th style="border: 1px solid #e6e6e6; padding: 12px; background-color: #f8f9fa; text-align: right; color: #333;">ERP Price</th>
-                        <th style="border: 1px solid #e6e6e6; padding: 12px; background-color: #f8f9fa; text-align: right; color: #333;">Unit Price</th>
-                        ${showDiscColumn ? '<th style="border: 1px solid #e6e6e6; padding: 12px; background-color: #f8f9fa; text-align: right; color: #333;">Discounted Price</th>' : ''}
-                        <th style="border: 1px solid #e6e6e6; padding: 12px; background-color: #f8f9fa; text-align: center; color: #333;">Qty</th>
-                        <th style="border: 1px solid #e6e6e6; padding: 12px; background-color: #f8f9fa; text-align: right; color: #333;">Ext. Total</th>
+                        <th style="border: 1px solid #e6e6e6; padding: 12px; text-align: left; color: #333;">Description</th>
+                        <th style="border: 1px solid #e6e6e6; padding: 12px; text-align: right; color: #333;">ERP Price</th>
+                        <th style="border: 1px solid #e6e6e6; padding: 12px; text-align: right; color: #333;">Unit Price</th>
+                        ${showDiscColumn ? '<th style="border: 1px solid #e6e6e6; padding: 12px; text-align: right; color: #333;">Discounted Price</th>' : ''}
+                        <th style="border: 1px solid #e6e6e6; padding: 12px; text-align: center; color: #333;">Qty</th>
+                        <th style="border: 1px solid #e6e6e6; padding: 12px; text-align: right; color: #333;">Ext. Total</th>
                     </tr>
                 </thead>
                 <tbody>
                     ${rowsHTML}
                 </tbody>
                 <tfoot>
-                    ${includeTax ? `<tr>
-                        <td colspan="${colSpanTotal}" style="border: 1px solid #e6e6e6; padding: 12px; text-align: right; background-color: #fff; font-size: 14px;"><strong>Subtotal:</strong></td>
-                        <td style="border: 1px solid #e6e6e6; padding: 12px; text-align: right; background-color: #fff; color: #333; font-size: 14px;"><strong>${formatINR(grandTotal)}</strong></td>
+                    ${includeTax ? `<tr class="email-subtotal-row">
+                        <td colspan="${colSpanTotal}" class="email-sub-label"><strong>Subtotal:</strong></td>
+                        <td class="email-sub-value"><strong>${formatINR(grandTotal)}</strong></td>
                     </tr>` : ''}
-                    ${includeTax ? `<tr>
-                        <td colspan="${colSpanTotal}" style="border: 1px solid #e6e6e6; padding: 12px; text-align: right; background-color: #fff; font-size: 14px;"><strong>Tax (${taxRate}%):</strong></td>
-                        <td style="border: 1px solid #e6e6e6; padding: 12px; text-align: right; background-color: #fff; color: #333; font-size: 14px;"><strong>${formatINR(taxAmount)}</strong></td>
+                    ${includeTax ? `<tr class="email-tax-row">
+                        <td colspan="${colSpanTotal}" class="email-sub-label"><strong>Tax (${taxRate}%):</strong></td>
+                        <td class="email-sub-value"><strong>${formatINR(taxAmount)}</strong></td>
                     </tr>` : ''}
-                    <tr>
-                        <td colspan="${colSpanTotal}" style="border: 1px solid #e6e6e6; padding: 12px; text-align: right; background-color: #fff; font-size: 15px;"><strong>${includeTax ? 'Grand Total:' : 'Total:'}</strong></td>
-                        <td style="border: 1px solid #e6e6e6; padding: 12px; text-align: right; background-color: #fff; color: #333; font-size: 15px;"><strong>${formatINR(finalTotal)}</strong></td>
+                    <tr class="email-grand-row">
+                        <td colspan="${colSpanTotal}" class="email-grand-label"><strong>${includeTax ? 'Grand Total:' : 'Total:'}</strong></td>
+                        <td class="email-grand-value"><strong>${formatINR(finalTotal)}</strong></td>
                     </tr>
                 </tfoot>
             </table>

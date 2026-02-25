@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Pricing & Quote Utility</title>
+    <script src="papaparse.min.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <header class="header-container sticky">
+        <button id="hamburgerToggle" class="hamburger-btn" onclick="toggleControlSidebar()" aria-label="Toggle sidebar">☰</button>
+        <div class="logo-placeholder">Quote<span>Utility</span></div>
+    </header>
+
+    <main class="main-content">
+        <section id="quoteTab" class="view-section active">
+            <div class="quote-layout">
+                <!-- Main Cart Section with Search -->
+                <div class="cart-section">
+                    <!-- Search Controls -->
+                    <div class="search-controls">
+                        <div class="search-row">
+                            <div class="search-group">
+                                <label>Catalog:</label>
+                                <select id="fileFilter" onchange="executeSearch()" class="compact-select">
+                                    <option value="all">-- All Catalogs --</option>
+                                </select>
+                            </div>
+                            <div class="search-group">
+                                <label>Search Keyword:</label>
+                                <input type="text" id="searchName" placeholder="Search..." oninput="executeSearch()" class="compact-input">
+                            </div>
+
+                        </div>
+                        <div class="search-row">
+                            <select id="searchDropdown" class="compact-select" style="flex:1;">
+                                <option value="">Select item...</option>
+                            </select>
+                            <button class="btn-action btn-small" onclick="addToQuote()">+ Add</button>
+                        </div>
+                    </div>
+
+                    <!-- Cart Header -->
+                    <div class="cart-header">
+                        <h3>Quote Cart</h3>
+                        <button class="btn-small" onclick="clearCart()">🗑️ Clear</button>
+                    </div>
+                    
+                    <!-- Cart Table -->
+                    <div class="table-wrapper scrollable">
+                        <table id="builderTable">
+                            <thead>
+                                <tr>
+                                    <th>Description</th>
+                                    <th>ERP</th>
+                                    <th>Price</th>
+                                    <th>Disc</th>
+                                    <th>Final</th>
+                                    <th>Qty</th>
+                                    <th>Total</th>
+                                    <th>Act</th>
+                                </tr>
+                            </thead>
+                            <tbody id="builderBody"></tbody>
+                        </table>
+                    </div>
+                    <!-- Cart Footer Controls: tax rate, include tax, generate -->
+                    <div class="cart-footer-controls">
+                        <div class="footer-row">
+                            <label style="margin-right:8px;">Tax Rate (%):</label>
+                            <input type="number" id="taxRate" value="18" min="0" max="100" onchange="setTaxRate(this.value)" class="compact-input" style="width:90px; margin-right:12px;">
+                            <label class="checkbox-inline" style="margin-right:16px;"><input type="checkbox" id="includeTax" checked onchange="setIncludeTax(this.checked)"> Include Tax</label>
+                            <button class="btn-action" onclick="generateQuote()">Generate</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Collapsible Control Sidebar -->
+                <div class="control-sidebar" id="controlSidebar">
+                    <button class="sidebar-toggle" onclick="toggleControlSidebar()" title="Toggle controls">☰</button>
+                    <div class="sidebar-content">
+                        <div class="control-section">
+                            <button class="btn-action btn-block" onclick="openDatabasePane()">📊 Database</button>
+                        </div>
+                        <div class="control-section">
+                            <label>Margin Disc (%):</label>
+                            <input type="number" id="defaultDiscount" value="0" min="0" max="100" class="compact-input">
+                        </div>
+                        <div class="sidebar-footer">
+                            <div id="memoryStatus" class="memory-badge"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Output Modal -->
+    <div id="outputModal" class="modal hidden">
+        <div class="modal-overlay" onclick="closeOutputModal()"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Final Quote</h2>
+                <button class="btn-close" onclick="closeOutputModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="emailOutputArea" class="output-area"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-action" onclick="copyTable()">📋 Copy for Email</button>
+                <button class="btn-secondary" onclick="closeOutputModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Database Pane -->
+    <div id="databasePane" class="pane hidden">
+        <div class="pane-header">
+            <button class="btn-back" onclick="closeDatabasePane()">← Back</button>
+            <h2>Database Manager</h2>
+            <button class="btn-danger" onclick="clearMemory()">⚠️ Wipe Database</button>
+        </div>
+
+        <div class="pane-content">
+            <div class="instructions-panel">
+                <h3>Workflow Instructions</h3>
+                <ol>
+                    <li>Upload master rate cards using the primary uploader.</li>
+                    <li>Upload No‑Rebate CSV to lock SKUs as needed.</li>
+                </ol>
+                <p class="hint"><em>Check the browser console for error logs if an upload fails.</em></p>
+            </div>
+
+            <div class="upload-card">
+                <h3>Step 1: Upload Master Rate Cards</h3>
+                <input type="file" id="csvFileInput" accept=".csv" multiple>
+                <button class="btn-action" onclick="processCSV()">Parse Master Pricing</button>
+                <span id="uploadStatus" class="status-badge">Awaiting upload...</span>
+            </div>
+
+            <div class="upload-card">
+                <h3 style="color:#cc0000">Step 2: Apply No-Rebate Rules</h3>
+                <input type="file" id="nrFileInput" accept=".csv">
+                <button class="btn-danger" onclick="processNoRebateCSV()">Cross-Reference & Lock SKUs</button>
+                <span id="nrUploadStatus" class="status-badge">Awaiting cross-reference...</span>
+            </div>
+
+            <h3>Database Preview <span style="font-size:12px;color:#666;">(up to 100 items)</span></h3>
+            <div class="db-preview">
+                <table id="dbPreviewTable">
+                    <thead>
+                        <tr>
+                            <th>Catalog Source</th>
+                            <th>Item Description</th>
+                            <th>ERP Base</th>
+                            <th>Cost</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dbPreviewBody">
+                        <tr><td colspan="5" style="text-align:center; color:#999; padding:20px;">Database is empty.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

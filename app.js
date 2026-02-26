@@ -597,9 +597,31 @@ function renderEmailTable() {
     outputArea.innerHTML = tableHTML;
 }
 
+
+// simple toast for transient messages in bottom-right corner
+function showToast(message, duration = 2000) {
+    let toast = document.getElementById('toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'toast';
+        document.body.appendChild(toast);
+    }
+    toast.textContent = message;
+    // make visible
+    toast.classList.add('show');
+    // clear previous hide timer if any
+    if (toast._hideTimeout) clearTimeout(toast._hideTimeout);
+    toast._hideTimeout = setTimeout(() => {
+        toast.classList.remove('show');
+    }, duration);
+}
+
 function copyTable() {
     const outputArea = document.getElementById('emailOutputArea');
-    if (currentQuote.length === 0) return alert("The quote is empty. Nothing to copy.");
+    if (currentQuote.length === 0) {
+        showToast("Quote is empty, nothing to copy.");
+        return;
+    }
     try {
         const range = document.createRange();
         range.selectNodeContents(outputArea);
@@ -609,12 +631,12 @@ function copyTable() {
         const successful = document.execCommand('copy');
         selection.removeAllRanges();
         if (successful) {
-            alert("Table successfully copied! You can now paste it into your email.");
+            showToast("Table copied! Paste into your email.");
         } else {
-            alert("Browser blocked the copy action. You may need to highlight and copy manually.");
+            showToast("Copy was blocked, please copy manually.");
         }
     } catch (err) {
         console.error("Copy failed:", err);
-        alert("An error occurred copying the text.");
+        showToast("Error while copying to clipboard.");
     }
 }

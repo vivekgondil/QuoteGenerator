@@ -23,9 +23,34 @@ body {
     min-height: 100vh;
 }
 
+/* Toast notification for non‑intrusive messages */
+#toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: var(--brand-dark);
+    color: white;
+    padding: 12px 18px;
+    border-radius: 6px;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(20px);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+    z-index: 1000;
+}
+#toast.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+#toast.hide {
+    opacity: 0;
+    transform: translateY(20px);
+}
+
 html { scroll-behavior: smooth; }
 
 /* Navigation & Header */
+/* Keep header positioned so absolute children (hamburger) align correctly */
 .header-container { 
     border-bottom: 3px solid var(--brand-orange); 
     display: flex; 
@@ -36,6 +61,7 @@ html { scroll-behavior: smooth; }
     box-shadow: var(--shadow);
     animation: slideDown 0.3s ease;
     z-index: 100;
+    position: relative;
 }
 
 .header-container.sticky {
@@ -78,8 +104,19 @@ html { scroll-behavior: smooth; }
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    position: absolute;
+    right: 16px;
+    left: auto;
+    top: 50%;
+    transform: translateY(-50%);
+    margin-right: 0;
 }
-.hamburger-btn:hover { background: var(--brand-orange-hover); transform: translateY(-2px); }
+.hamburger-btn:hover { background: var(--brand-orange-hover); }
+
+/* Slightly smaller hamburger on narrow screens so it doesn't overflow */
+@media (max-width: 480px) {
+    .hamburger-btn { width: 36px; height: 36px; font-size: 18px; right: 12px; }
+}
 
 /* Cart footer controls (moved tax + generate below the cart) */
 .cart-footer-controls {
@@ -479,6 +516,12 @@ button:hover {
     background: #222;
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+/* Prevent global button hover transform from moving the hamburger */
+.hamburger-btn:hover {
+    transform: translateY(-50%) !important;
+    box-shadow: 0 6px 14px rgba(0,0,0,0.12);
 }
 
 button:active {

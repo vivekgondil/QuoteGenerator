@@ -442,10 +442,10 @@ function addToQuote() {
     renderUI();
 }
 
-function updateQty(id, delta) {
+function updateQty(id, value) {
     const item = currentQuote.find(i => i.cartId === id);
     if (item) {
-        item.qty += delta;
+        item.qty = value;
         if (item.qty < 1) item.qty = 1;
         saveCart();
         renderUI();
@@ -502,9 +502,7 @@ function renderBuilderTable() {
             <td style="font-weight: bold; color: var(--brand-orange);">${formatINR(finalUnitPrice)}</td>
             <td>
                 <div class="qty-control">
-                    <button class="btn-small" onclick="updateQty(${item.cartId}, -1)">-</button>
-                    <input type="number" class="qty-input" value="${item.qty}" readonly>
-                    <button class="btn-small" onclick="updateQty(${item.cartId}, 1)">+</button>
+                    <input type="number" class="qty-input" value="${item.qty}" onchange="updateQty(${item.cartId}, this.value)">
                 </div>
             </td>
             <td><strong>${formatINR(lineTotal)}</strong></td>
@@ -640,3 +638,4 @@ function copyTable() {
         showToast("Error while copying to clipboard.");
     }
 }
+

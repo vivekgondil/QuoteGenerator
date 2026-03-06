@@ -6,6 +6,10 @@ let currentQuote = JSON.parse(localStorage.getItem('quoteCart')) || [];
 let sheetUrls = JSON.parse(localStorage.getItem('savedSheetUrls')) || [];
 let lastSyncTime = parseInt(localStorage.getItem('lastSheetSyncTime')) || 0;
 let currentSearchResults = [];
+// Add this timer variable to the top of your app.js state management
+let searchTimeout = null;
+let savedBaskets = JSON.parse(localStorage.getItem('savedQuotesDatabase')) || [];
+let currentBasketId = Date.now().toString(); // Assigns a unique ID to the active session
 
 let taxRate = parseFloat(localStorage.getItem('taxRate'));
 if (isNaN(taxRate)) taxRate = 18;
@@ -21,6 +25,8 @@ function initApp() {
 
     renderSheetManager();
     checkDailySync();
+
+    renderSavedBaskets();
 
     const taxInput = document.getElementById('taxRate');
     if (taxInput) taxInput.value = taxRate;
@@ -84,8 +90,6 @@ function saveCart() {
 }
 
 // --- Dynamic Search (Fixed Catalog Selection) ---
-// Add this timer variable to the top of your app.js state management
-let searchTimeout = null;
 function executeSearch() {
     clearTimeout(searchTimeout);
     searchTimeout = setTimeout(() => {
@@ -225,6 +229,7 @@ function generateQuote() {
         showToast('Cart is empty', 'error');
         return;
     }
+    saveCurrentBasket();
     renderEmailTable();
     document.getElementById('outputModal').classList.add('active');
 }
@@ -777,6 +782,106 @@ async function syncAllSheets() {
     showToast("All cloud sheets synchronized", "success");
 }
 
+// --- Basket Management Logic ---
 
+function saveCurrentBasket() {
+    if (currentQuote.length === 0) return; // Don't save empty baskets
+
+    const basketName = document.getElementById('basketNameInput').value.trim() || "Untitled Quote";
+    
+    // Check if we are updating an existing basket or making a new one
+    const existingIndex = savedBaskets.findIndex(b => b.id === currentBasketId);
+    
+    const basketData = {
+        id: currentBasketId,
+        name: basketName,
+        items: JSON.parse(JSON.stringify(currentQuote)), // Deep copy the cart
+        updatedAt: Date.now()
+    };
+
+    if (existingIndex > -1) {
+        savedBaskets[existingIndex] = basketData; // Update existing
+    } else {
+        savedBaskets.push(basketData); // Save new
+    }
+
+    localStorage.setItem('savedQuotesDatabase', JSON.stringify(savedBaskets));
+    renderSavedBaskets();
+}
+
+function loadBasket(basketId) {
+    const basket = savedBaskets.find(b => b.id === basketId);
+    if (!basket) return;
+
+    currentBasketId = basket.id;
+    document.getElementById('basketNameInput').value = basket.name;
+    
+    // Replace the active cart with the saved items
+    currentQuote = JSON.parse(JSON.stringify(basket.items));
+    saveCart(); // Sync to your existing local storage
+    renderUI();
+    showToast(`Loaded: ${basket.name}`, 'success');
+}
+
+function deleteBasket(basketId, event) {
+    event.stopPropagation(); // Prevents the click from triggering loadBasket
+    
+    if (confirm("Are you sure you want to delete this saved quote?")) {
+        savedBaskets = savedBaskets.filter(b => b.id !== basketId);
+        localStorage.setItem('savedQuotesDatabase', JSON.stringify(savedBaskets));
+        renderSavedBaskets();
+        
+        // If they delete the basket they are currently looking at, wipe the screen
+        if (currentBasketId === basketId) {
+            startNewBasket();
+        }
+    }
+}
+
+function startNewBasket() {
+    currentBasketId = Date.now().toString();
+    document.getElementById('basketNameInput').value = "Untitled Quote";
+    clearCart(); // Your existing function
+}
+
+function renderSavedBaskets() {
+    const list = document.getElementById('savedBasketsList');
+    list.innerHTML = '';
+    
+    if (savedBaskets.length === 0) {
+        list.innerHTML = '<li><span class="hint">No saved quotes yet.</span></li>';
+        return;
+    }
+
+    // Sort so the most recently updated quotes are at the top
+    savedBaskets.sort((a, b) => b.updatedAt - a.updatedAt).forEach(basket => {
+        const li = document.createElement('li');
+        li.style.cssText = `
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 8px 12px; border: 1px solid var(--border-light);
+            border-radius: var(--radius-md); background: var(--bg-card);
+            cursor: pointer; transition: all 0.2s ease;
+        `;
+        
+        // Highlight the active basket
+        if (basket.id === currentBasketId) {
+            li.style.borderColor = 'var(--brand-orange)';
+            li.style.backgroundColor = 'var(--brand-orange-light)';
+        }
+
+        li.onclick = () => loadBasket(basket.id);
+        
+        li.innerHTML = `
+            <div style="flex: 1; overflow: hidden;">
+                <div style="font-weight: 600; font-size: 0.85rem; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; color: var(--brand-dark);">${basket.name}</div>
+                <div style="font-size: 0.7rem; color: var(--text-muted);">${basket.items.length} items</div>
+            </div>
+            <button class="btn-icon" onclick="deleteBasket('${basket.id}', event)" title="Delete" style="color: var(--danger); padding: 4px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+            </button>
+        `;
+        list.appendChild(li);
+    });
+}
 
 

@@ -57,6 +57,24 @@
             </div>
 
             <div class="cart-body">
+                <div
+                    style="padding: 15px 20px; border-bottom: 1px solid var(--border-light); background: #fff; display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 10px; width: 50%;">
+                        <label
+                            style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">Quote
+                            Name:</label>
+                        <input type="text" id="basketNameInput" value="Untitled Quote" class="input-control"
+                            style="font-weight: 600; font-size: 1rem; color: var(--brand-dark); padding: 6px 12px;">
+                    </div>
+                    <button class="btn btn-small" onclick="startNewBasket()" style="background: var(--bg-main);">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        New Quote
+                    </button>
+                </div>
                 <table id="builderTable">
                     <thead>
                         <tr>
@@ -102,6 +120,13 @@
         <aside class="control-sidebar" id="controlSidebar">
             <div class="sidebar-section">
                 <h2>Settings</h2>
+                <div class="sidebar-section">
+                    <h2>Saved Quotes</h2>
+                    <ul id="savedBasketsList"
+                        style="list-style: none; padding: 0; margin: 0; max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
+                        <!-- Saved baskets will inject here -->
+                    </ul>
+                </div>
                 <div class="input-group" style="margin-bottom: 16px;">
                     <label>Default Margin Discount (%)</label>
                     <input type="number" id="defaultDiscount" value="0" min="0" max="100" class="input-control">

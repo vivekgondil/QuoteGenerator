@@ -5,6 +5,7 @@ let pricingDatabase = JSON.parse(localStorage.getItem('pricingDB')) || [];
 let currentQuote = JSON.parse(localStorage.getItem('quoteCart')) || [];
 let sheetUrls = JSON.parse(localStorage.getItem('savedSheetUrls')) || [];
 let lastSyncTime = parseInt(localStorage.getItem('lastSheetSyncTime')) || 0;
+let currentSearchResults = [];
 
 let taxRate = parseFloat(localStorage.getItem('taxRate'));
 if (isNaN(taxRate)) taxRate = 18;
@@ -775,6 +776,7 @@ async function syncAllSheets() {
     renderDbPreview();
     showToast("All cloud sheets synchronized", "success");
 }
+
 
 
 

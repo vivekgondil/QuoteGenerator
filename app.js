@@ -84,10 +84,7 @@ function saveCart() {
 
 // --- Dynamic Search (Fixed Catalog Selection) ---
 function executeSearch() {
-    if (searchTimeout) {
-        clearTimeout(searchTimeout);
-    }
-
+    clearTimeout(searchTimeout);
     searchTimeout = setTimeout(() => {
         const rawInput = document.getElementById('searchName').value.toLowerCase().trim();
         const listEl = document.getElementById('autocompleteResults');
@@ -776,4 +773,5 @@ async function syncAllSheets() {
     renderDbPreview();
     showToast("All cloud sheets synchronized", "success");
 }
+
 

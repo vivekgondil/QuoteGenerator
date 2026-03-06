@@ -83,6 +83,8 @@ function saveCart() {
 }
 
 // --- Dynamic Search (Fixed Catalog Selection) ---
+// Add this timer variable to the top of your app.js state management
+let searchTimeout = null;
 function executeSearch() {
     clearTimeout(searchTimeout);
     searchTimeout = setTimeout(() => {
@@ -773,5 +775,6 @@ async function syncAllSheets() {
     renderDbPreview();
     showToast("All cloud sheets synchronized", "success");
 }
+
 
 

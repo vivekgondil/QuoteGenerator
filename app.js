@@ -662,15 +662,15 @@ async function syncAllSheets() {
     // Create an array of network requests
     const fetchPromises = sheetUrls.map(sheet => {
         return new Promise((resolve) => {
-            // const cacheBuster = Date.now();
-            // const csvExportUrl = `https://docs.google.com/spreadsheets/d/${sheet.id}/export?format=csv&cb=${cacheBuster}`;
+            const cacheBuster = Date.now();
+            const csvExportUrl = `https://docs.google.com/spreadsheets/d/${sheet.id}/export?format=csv&cb=${cacheBuster}`;
 
             // New code inside fetchPromises
-            const cacheBuster = Date.now();
-            const baseGoogleUrl = `https://docs.google.com/spreadsheets/d/${sheet.id}/export?format=csv&cb=${cacheBuster}`;
+            //const cacheBuster = Date.now();
+            //const baseGoogleUrl = `https://docs.google.com/spreadsheets/d/${sheet.id}/export?format=csv&cb=${cacheBuster}`;
 
             // Route the request through AllOrigins, a free CORS proxy, to bypass browser security blocks
-            const csvExportUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(baseGoogleUrl)}`;
+            //const csvExportUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(baseGoogleUrl)}`;
 
             Papa.parse(csvExportUrl, {
                 download: true, header: true, skipEmptyLines: true,
@@ -776,3 +776,4 @@ async function syncAllSheets() {
     renderDbPreview();
     showToast("All cloud sheets synchronized", "success");
 }
+

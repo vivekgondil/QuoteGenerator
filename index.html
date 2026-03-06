@@ -13,6 +13,16 @@
     <header class="header-container">
         <div class="logo-placeholder"><span>Quote</span> Generator</div>
         <div class="header-actions">
+            <button class="btn btn-icon" onclick="document.getElementById('aboutModal').classList.add('active')"
+                title="Why use this tool?">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                </svg>
+                About App
+            </button>
             <button class="btn btn-icon" onclick="openDatabaseModal()" title="Manage Database">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                     stroke-linecap="round" stroke-linejoin="round">
@@ -265,6 +275,61 @@
         </div>
     </div>
 
+    <div id="aboutModal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2>Stop Fighting Excel. Start Closing Deals.</h2>
+                <button class="btn btn-icon" onclick="closeModal('aboutModal')">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body" style="line-height: 1.6;">
+                <p style="margin-top: 0; font-size: 1.05rem; color: var(--text-main);">
+                    This quoting engine was built to eliminate the friction of massive, slow-loading corporate rate
+                    cards. It pulls the entire pricing database directly into your browser's local memory, giving you
+                    sub-second search speeds even when you are offline or on a terrible connection.
+                </p>
+
+                <h3
+                    style="margin-top: 24px; color: var(--brand-orange-hover); border-bottom: 1px solid var(--border-light); padding-bottom: 8px;">
+                    The Value to You</h3>
+
+                <ul
+                    style="padding-left: 20px; color: var(--text-main); display: flex; flex-direction: column; gap: 12px;">
+                    <li>
+                        <strong>Sub-Second Execution:</strong> Stop waiting for spreadsheets to calculate. Find exact
+                        SKUs instantly while the client is still talking.
+                    </li>
+                    <li>
+                        <strong>Margin Armor:</strong> The tool automatically flags and locks "No Rebate" (NR) SKUs.
+                        This prevents accidental over-discounting on protected hardware, securing your commission.
+                    </li>
+                    <li>
+                        <strong>Live Cloud Sync:</strong> Forget asking if you have the "latest version" of a file.
+                        Click sync to pull today's active prices straight from the master cloud sheets.
+                    </li>
+                    <li>
+                        <strong>Deal Workspaces:</strong> Managing three different revisions for the same client? Save
+                        and name individual quote baskets to jump between deals without losing your work.
+                    </li>
+                    <li>
+                        <strong>Outlook-Ready Output:</strong> No more fighting with PDF formatting. Generate the quote,
+                        copy it to your clipboard, and paste a perfectly formatted, professional HTML table directly
+                        into your email draft.
+                    </li>
+                </ul>
+
+                <div
+                    style="margin-top: 30px; padding: 15px; background: #f8fafc; border-radius: var(--radius-md); font-size: 0.85rem; color: var(--text-muted); text-align: center;">
+                    <strong>Savex Quote Generator</strong> &bull; Client-Side Edge Architecture
+                </div>
+            </div>
+        </div>
+    </div>
 
 
     <script src="app.js"></script>

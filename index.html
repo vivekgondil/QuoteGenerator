@@ -1,172 +1,248 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="utf-8">
-    <title>Pricing & Quote Utility</title>
-    <script src="papaparse.min.js"></script>
+    <title>Savex Quote Engine</title>
+    <script src="https://unpkg.com/papaparse@latest/papaparse.min.js"></script>
     <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
 
-    <header class="header-container sticky">
-        <div class="logo-placeholder">Quote<span>Utility</span></div>
-        <button id="hamburgerToggle" class="hamburger-btn" onclick="toggleControlSidebar()" aria-label="Toggle sidebar">☰</button>
+    <header class="header-container">
+        <div class="logo-placeholder"><span>Savex </span>Quote Generator</div>
+        <div class="header-actions">
+            <button class="btn btn-icon" onclick="openDatabaseModal()" title="Manage Database">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+                    <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+                    <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+                </svg>
+                Catalog Manager
+            </button>
+            <button class="btn btn-icon" onclick="toggleControlSidebar()" title="Toggle Sidebar">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="15" y1="3" x2="15" y2="21"></line>
+                </svg>
+            </button>
+        </div>
     </header>
 
     <main class="main-content">
-        <section id="quoteTab" class="view-section active">
-            <div class="quote-layout">
-                <!-- Main Cart Section with Search -->
-                <div class="cart-section">
-                    <!-- Search Controls -->
-                    <div class="search-controls">
-                        <div class="search-row">
-                            <div class="search-group">
-                                <label>Catalog:</label>
-                                <select id="fileFilter" onchange="executeSearch()" class="compact-select">
-                                    <option value="all">-- All Catalogs --</option>
-                                </select>
-                            </div>
-                            <div class="search-group">
-                                <label>Search Keyword:</label>
-                                <input type="text" id="searchName" placeholder="Search..." oninput="executeSearch()" class="compact-input">
-                            </div>
 
-                        </div>
-                        <div class="search-row">
-                            <select id="searchDropdown" class="compact-select" style="flex:1;">
-                                <option value="">Select item...</option>
-                            </select>
-                            <button class="btn-action btn-small" onclick="addToQuote()">+ Add</button>
-                        </div>
-                    </div>
+        <div class="cart-wrapper">
 
-                    <!-- Cart Header -->
-                    <div class="cart-header">
-                        <h3>Quote Cart</h3>
-                        <button class="btn-small" onclick="clearCart()">🗑️ Clear</button>
+            <div class="search-controls">
+                <div class="search-grid">
+                    <div class="input-group">
+                        <label>Active Catalog</label>
+                        <select id="fileFilter" onchange="executeSearch()" class="input-control">
+                            <option value="all">Global Search (All Catalogs)</option>
+                        </select>
                     </div>
-                    
-                    <!-- Cart Table -->
-                    <div class="table-wrapper scrollable">
-                        <table id="builderTable">
-                            <thead>
-                                <tr>
-                                    <th>Description</th>
-                                    <th>ERP</th>
-                                    <th>Price</th>
-                                    <th>Disc</th>
-                                    <th>Final</th>
-                                    <th>Qty</th>
-                                    <th>Total</th>
-                                    <th>Act</th>
-                                </tr>
-                            </thead>
-                            <tbody id="builderBody"></tbody>
-                        </table>
-                    </div>
-                    <!-- Cart Footer Controls: tax rate, include tax, generate -->
-                    <div class="cart-footer-controls">
-                        <div class="footer-row">
-                            <label style="margin-right:8px;">Tax Rate (%):</label>
-                            <input type="number" id="taxRate" value="18" min="0" max="100" onchange="setTaxRate(this.value)" class="compact-input" style="width:90px; margin-right:12px;">
-                            <label class="checkbox-inline" style="margin-right:16px;"><input type="checkbox" id="includeTax" checked onchange="setIncludeTax(this.checked)"> Include Tax</label>
-                            <button class="btn-action" onclick="generateQuote()">Generate</button>
-                        </div>
+                    <div class="input-group">
+                        <label>Search Product (SKU, Desc, Segment)</label>
+                        <input type="text" id="searchName" placeholder="Start typing to find products..."
+                            oninput="executeSearch()" onfocus="executeSearch()" autocomplete="off"
+                            class="input-control">
                     </div>
                 </div>
-                <!-- Collapsible Control Sidebar -->
-                <div class="control-sidebar" id="controlSidebar">
-                    <!-- <button class="sidebar-toggle" onclick="toggleControlSidebar()" title="Toggle controls">☰</button> -->
-                    <div class="sidebar-content">
-                        <div class="control-section">
-                            <button class="btn-action btn-block" onclick="openDatabasePane()">Database Manager</button>
-                        </div>
-                        <div class="control-section">
-                            <label>Default Margin Disc (%):</label>
-                            <input type="number" id="defaultDiscount" value="0" min="0" max="100" class="compact-input">
-                        </div>
-                        <div class="sidebar-footer">
-                            <div id="memoryStatus" class="memory-badge"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-    </main>
 
-    <!-- Output Modal -->
-    <div id="outputModal" class="modal hidden">
-        <div class="modal-overlay" onclick="closeOutputModal()"></div>
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Final Quote</h2>
-                <button class="btn-close" onclick="closeOutputModal()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div id="emailOutputArea" class="output-area"></div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn-action" onclick="copyTable()">📋 Copy for Email</button>
-                <button class="btn-secondary" onclick="closeOutputModal()">Close</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Database Pane -->
-    <div id="databasePane" class="pane hidden">
-        <div class="pane-header">
-            <button class="btn-back" onclick="closeDatabasePane()">← Back</button>
-            <h2>Database Manager</h2>
-            <button class="btn-danger" onclick="clearMemory()">⚠️ Wipe Database</button>
-        </div>
-
-        <div class="pane-content">
-            <div class="instructions-panel">
-                <h3>Workflow Instructions</h3>
-                <ol>
-                    <li>Upload master rate cards using the primary uploader.</li>
-                    <li>Upload No‑Rebate CSV to lock SKUs as needed.</li>
-                </ol>
-                <p class="hint"><em>Check the browser console for error logs if an upload fails.</em></p>
+                <ul id="autocompleteResults" class="autocomplete-results">
+                </ul>
             </div>
 
-            <div class="upload-card">
-                <h3>Step 1: Upload Master Rate Cards</h3>
-                <input type="file" id="csvFileInput" accept=".csv" multiple>
-                <button class="btn-action" onclick="processCSV()">Parse Master Pricing</button>
-                <span id="uploadStatus" class="status-badge">Awaiting upload...</span>
-            </div>
-
-            <div class="upload-card">
-                <h3 style="color:#cc0000">Step 2: Apply No-Rebate Rules</h3>
-                <input type="file" id="nrFileInput" accept=".csv">
-                <button class="btn-danger" onclick="processNoRebateCSV()">Cross-Reference & Lock SKUs</button>
-                <span id="nrUploadStatus" class="status-badge">Awaiting cross-reference...</span>
-            </div>
-
-            <h3>Database Preview <span style="font-size:12px;color:#666;">(up to 100 items)</span></h3>
-            <div class="db-preview">
-                <table id="dbPreviewTable">
+            <div class="cart-body">
+                <table id="builderTable">
                     <thead>
                         <tr>
-                            <th>Catalog Source</th>
-                            <th>Item Description</th>
-                            <th>ERP Base</th>
-                            <th>Cost</th>
-                            <th>Status</th>
+                            <th style="width: 35%;">Product Details</th>
+                            <th style="text-align: right;">List Price (ERP)</th>
+                            <th style="text-align: right;">Base Cost</th>
+                            <th style="text-align: center;">Extra Disc</th>
+                            <th style="text-align: right;">Final Sell</th>
+                            <th style="text-align: center;">Qty</th>
+                            <th style="text-align: right;">Ext Total</th>
+                            <th style="text-align: center; width: 60px;"></th>
                         </tr>
                     </thead>
-                    <tbody id="dbPreviewBody">
-                        <tr><td colspan="5" style="text-align:center; color:#999; padding:20px;">Database is empty.</td></tr>
+                    <tbody id="builderBody">
                     </tbody>
                 </table>
             </div>
+            <div class="cart-body-footer">
+                <!-- <h2>Actions</h2> -->
+                <button class="btn btn-primary" style="margin-bottom: 10px; width: 25%;" onclick="generateQuote()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                    Generate Quote
+                </button>
+
+                <button class="btn" style="margin-bottom: 10px; width: 25%" onclick="clearCart()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                    Clear Quote
+                </button>
+            </div>
+        </div>
+
+        <aside class="control-sidebar" id="controlSidebar">
+            <div class="sidebar-section">
+                <h2>Settings</h2>
+                <div class="input-group" style="margin-bottom: 16px;">
+                    <label>Default Margin Discount (%)</label>
+                    <input type="number" id="defaultDiscount" value="0" min="0" max="100" class="input-control">
+                    <span class="hint">Applied automatically to new items added to cart.</span>
+                </div>
+                <div class="input-group" style="margin-bottom: 16px;">
+                    <label>Tax Rate (%)</label>
+                    <input type="number" id="taxRate" value="18" min="0" max="100" onchange="setTaxRate(this.value)"
+                        class="input-control">
+                </div>
+                <label class="checkbox-group">
+                    <input type="checkbox" id="includeTax" checked onchange="setIncludeTax(this.checked)">
+                    <span>Include Tax in Final Quote</span>
+                </label>
+            </div>
+
+            <div
+                style="margin-top: auto; padding-top: 20px; border-top: 1px solid var(--border-light); font-size: 0.8rem; color: var(--text-muted);">
+                Memory Loaded:<br>
+                <strong id="memoryStatus" style="color: var(--brand-dark); font-size: 1rem;">0 SKUs</strong>
+            </div>
+        </aside>
+    </main>
+
+    <div id="outputModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Email-Ready Quote</h2>
+                <button class="btn btn-icon" onclick="closeModal('outputModal')">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="hint" style="margin-bottom: 15px;">Click "Copy to Clipboard" and paste directly into Outlook
+                    or Gmail. The formatting is baked into the HTML.</p>
+                <div id="emailOutputArea"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" onclick="closeModal('outputModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="copyTable()">📋 Copy to Clipboard</button>
+            </div>
         </div>
     </div>
 
-    <!-- toast notifications will appear here -->
     <div id="toast"></div>
+
+    <div id="databaseModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Database Manager</h2>
+                <button class="btn btn-icon" onclick="closeModal('databaseModal')">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+
+                <div class="upload-box"
+                    style="border-color: var(--brand-orange); background: var(--brand-orange-light);">
+                    <h3 style="color: var(--brand-orange-hover);">Cloud Sync: Manage Google Sheets</h3>
+                    <p class="hint">Paste links to your live pricing sheets. Ensure they are set to "Anyone with the
+                        link can view".</p>
+
+                    <div style="display: flex; gap: 10px; margin-top: 10px; align-items: center;">
+                        <input type="text" id="newSheetUrl" placeholder="https://docs.google.com/spreadsheets/d/..."
+                            class="input-control" style="flex: 1;">
+                        <button class="btn btn-primary" onclick="addSheetUrl()">Add Link</button>
+                    </div>
+
+                    <div style="margin-top: 15px;">
+                        <ul id="savedSheetsList"
+                            style="list-style: none; padding: 0; margin: 0; max-height: 150px; overflow-y: auto;">
+                        </ul>
+                    </div>
+
+                    <div
+                        style="display: flex; gap: 10px; margin-top: 15px; align-items: center; justify-content: space-between; border-top: 1px solid #f9cdab; padding-top: 15px;">
+                        <button class="btn btn-primary" onclick="syncAllSheets()">🔄 Sync All Sheets Now</button>
+                        <span id="sheetSyncStatus" class="status-badge" style="opacity: 0;">Ready</span>
+                    </div>
+                </div>
+
+                <div class="upload-box danger-zone">
+                    <h2 style="color: red; margin-bottom: 30px;">Offline Upload</h2>
+                    <h3>Step 1: Upload Master Rate Cards</h3>
+                    <p class="hint">Ensure files are .csv format and contain SkuTitle and ERP columns.</p>
+                    <div style="display: flex; gap: 10px; margin-top: 10px; align-items: center; margin-bottom: 20px;">
+                        <input type="file" id="csvFileInput" accept=".csv" multiple class="input-control"
+                            style="width: auto;">
+                        <button class="btn btn-primary" onclick="processCSV()">Load Catalog</button>
+                        <span id="uploadStatus" class="status-badge" style="opacity: 0;">Status</span>
+                    </div>
+
+                    <h3>Optional Step 2: Apply No-Rebate Rules</h3>
+                    <p class="hint">Upload a CSV containing locked SKUs. The tool will cross-reference your memory and
+                        lock discounts.</p>
+                    <div style="display: flex; gap: 10px; margin-top: 10px; align-items: center;">
+                        <input type="file" id="nrFileInput" accept=".csv" class="input-control"
+                            style="width: auto; border-color: #fca5a5;">
+                        <button class="btn btn-danger" onclick="processNoRebateCSV()">Lock SKUs</button>
+                        <span id="nrUploadStatus" class="status-badge" style="opacity: 0;">Status</span>
+                    </div>
+                </div>
+
+                <div
+                    style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 10px; margin-top: 30px;">
+                    <h3 style="margin:0;">Data Preview <span class="hint">(Top 100 Rows)</span></h3>
+                    <button class="btn btn-small" style="color: var(--danger);" onclick="clearMemory()">⚠️ Wipe Entire
+                        DB</button>
+                </div>
+
+                <div
+                    style="border: 1px solid var(--border-light); border-radius: var(--radius-md); overflow-y: auto; max-height: 250px;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Catalog Source</th>
+                                <th>Item Description</th>
+                                <th>ERP Base</th>
+                                <th>Cost</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dbPreviewBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
     <script src="app.js"></script>
 </body>
+
 </html>

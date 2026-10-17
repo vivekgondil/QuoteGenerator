@@ -3,8 +3,10 @@
 
 <head>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quote Engine</title>
     <script src="https://unpkg.com/papaparse@latest/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <link rel="stylesheet" href="styles.css">
 </head>
 
@@ -21,16 +23,16 @@
                     <line x1="12" y1="16" x2="12" y2="12"></line>
                     <line x1="12" y1="8" x2="12.01" y2="8"></line>
                 </svg>
-                About App
+                <span class="btn-label">About App</span>
             </button>
-            <button class="btn btn-icon" onclick="openDatabaseModal()" title="Manage Database">
+            <button class="btn btn-icon" onclick="openDatabaseModal()" title="Manage Price List">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                     stroke-linecap="round" stroke-linejoin="round">
                     <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
                     <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
                     <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
                 </svg>
-                Catalog Manager
+                <span class="btn-label">Price List Manager</span>
             </button>
             <button class="btn btn-icon" onclick="toggleControlSidebar()" title="Toggle Sidebar">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -67,14 +69,12 @@
             </div>
 
             <div class="cart-body">
-                <div
-                    style="padding: 15px 20px; border-bottom: 1px solid var(--border-light); background: #fff; display: flex; align-items: center; justify-content: space-between;">
-                    <div style="display: flex; align-items: center; gap: 10px; width: 50%;">
-                        <label
-                            style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">Quote
+                <div class="cart-header-bar">
+                    <div class="quote-name-group">
+                        <label class="quote-name-label">Quote
                             Name:</label>
-                        <input type="text" id="basketNameInput" value="Untitled Quote" class="input-control"
-                            style="font-weight: 600; font-size: 1rem; color: var(--brand-dark); padding: 6px 12px;">
+                        <input type="text" id="basketNameInput" value="Untitled Quote" class="input-control quote-name-input"
+                            oninput="setCurrentBasketName(this.value)">
                     </div>
                     <button class="btn btn-small" onclick="startNewBasket()" style="background: var(--bg-main);">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -85,26 +85,28 @@
                         New Quote
                     </button>
                 </div>
-                <table id="builderTable">
-                    <thead>
-                        <tr>
-                            <th style="width: 35%;">Product Details</th>
-                            <th style="text-align: right;">List Price (ERP)</th>
-                            <th style="text-align: right;">Base Cost</th>
-                            <th style="text-align: center;">Extra Disc</th>
-                            <th style="text-align: right;">Final Sell</th>
-                            <th style="text-align: center;">Qty</th>
-                            <th style="text-align: right;">Ext Total</th>
-                            <th style="text-align: center; width: 60px;"></th>
-                        </tr>
-                    </thead>
-                    <tbody id="builderBody">
-                    </tbody>
-                </table>
+                <div class="table-responsive">
+                    <table id="builderTable">
+                        <thead>
+                            <tr>
+                                <th style="width: 35%;">Product Details</th>
+                                <th style="text-align: right;">Base Cost</th>
+                                <th style="text-align: center;">Extra Disc</th>
+                                <th style="text-align: right;">Final Sell</th>
+                                <th style="text-align: center;">Qty</th>
+                                <th style="text-align: right;">Ext Total</th>
+                                <th style="text-align: center; width: 60px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="builderBody">
+                        </tbody>
+                        <tfoot id="builderFooter">
+                        </tfoot>
+                    </table>
+                </div>
             </div>
             <div class="cart-body-footer">
-                <!-- <h2>Actions</h2> -->
-                <button class="btn btn-primary" style="margin-bottom: 10px; width: 25%;" onclick="generateQuote()">
+                <button class="btn btn-primary cart-footer-btn" onclick="generateQuote()">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                         stroke-linecap="round" stroke-linejoin="round">
                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -116,7 +118,7 @@
                     Generate Quote
                 </button>
 
-                <button class="btn" style="margin-bottom: 10px; width: 25%" onclick="clearCart()">
+                <button class="btn cart-footer-btn" onclick="clearCart()">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                         stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="3 6 5 6 21 6"></polyline>
@@ -128,29 +130,72 @@
         </div>
 
         <aside class="control-sidebar" id="controlSidebar">
-            <div class="sidebar-section">
-                <h2>Settings</h2>
+            <div class="sidebar-tabs">
+                <button type="button" class="sidebar-tab-btn active" data-tab="saved" onclick="switchSidebarTab('saved')">Saved Quotes</button>
+                <button type="button" class="sidebar-tab-btn" data-tab="settings" onclick="switchSidebarTab('settings')">Settings</button>
+            </div>
+
+            <div class="sidebar-tab-panel active" data-tab-panel="saved">
                 <div class="sidebar-section">
-                    <h2>Saved Quotes</h2>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h2 style="margin: 0;">Saved Quotes</h2>
+                        <div style="display: flex; gap: 6px;">
+                            <button class="btn btn-small" onclick="exportSavedBaskets()" title="Export saved quotes to a file (exports only the selected ones, if any)">Export</button>
+                            <button class="btn btn-small" onclick="document.getElementById('importBasketsInput').click()" title="Import saved quotes from a file">Import</button>
+                            <input type="file" id="importBasketsInput" accept=".json" style="display: none;" onchange="importSavedBaskets(this.files[0])">
+                        </div>
+                    </div>
+                    <input type="text" id="basketSearchInput" placeholder="Search saved quotes..." class="input-control"
+                        oninput="renderSavedBaskets()" style="margin-top: 10px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+                        <label class="checkbox-group" style="font-size: 0.75rem; color: var(--text-muted);">
+                            <input type="checkbox" id="selectAllBaskets" onclick="toggleSelectAllBaskets(event)">
+                            <span id="selectedBasketsLabel">Select all</span>
+                        </label>
+                        <button class="btn btn-small" id="deleteSelectedBasketsBtn" onclick="deleteSelectedBaskets()" disabled
+                            style="color: var(--danger); border-color: var(--danger);" title="Delete all selected quotes">Delete Selected</button>
+                    </div>
                     <ul id="savedBasketsList"
-                        style="list-style: none; padding: 0; margin: 0; max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
+                        style="list-style: none; padding: 0; margin: 8px 0 0; max-height: 400px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
                         <!-- Saved baskets will inject here -->
                     </ul>
                 </div>
-                <div class="input-group" style="margin-bottom: 16px;">
-                    <label>Default Margin Discount (%)</label>
-                    <input type="number" id="defaultDiscount" value="0" min="0" max="100" class="input-control">
-                    <span class="hint">Applied automatically to new items added to cart.</span>
+            </div>
+
+            <div class="sidebar-tab-panel" data-tab-panel="settings">
+                <div class="sidebar-section">
+                    <h2>Settings</h2>
+                    <div class="input-group" style="margin-bottom: 16px;">
+                        <label>Default Margin Discount (%)</label>
+                        <input type="number" id="defaultDiscount" value="0" min="0" max="100" class="input-control">
+                        <span class="hint">Applied automatically to new items added to cart.</span>
+                    </div>
+                    <div class="input-group" style="margin-bottom: 16px;">
+                        <label>Tax Rate (%)</label>
+                        <input type="number" id="taxRate" value="18" min="0" max="100" onchange="setTaxRate(this.value)"
+                            class="input-control">
+                    </div>
+                    <label class="checkbox-group">
+                        <input type="checkbox" id="includeTax" checked onchange="setIncludeTax(this.checked)">
+                        <span>Include Tax in Final Quote</span>
+                    </label>
+                    <label class="checkbox-group" style="margin-top: 16px;">
+                        <input type="checkbox" id="multiYearSplitToggle" checked onchange="setMultiYearSplitEnabled(this.checked)">
+                        <span>Enable "Split into 3 years" discount feature</span>
+                    </label>
+                    <div class="input-group" style="margin-bottom: 16px; margin-top: 16px;">
+                        <label>Price Validity</label>
+                        <input type="date" id="priceValidity" onchange="setPriceValidity(this.value)"
+                            class="input-control">
+                        <span class="hint">Defaults to the last day of the current month.</span>
+                    </div>
+                    <div class="input-group" style="margin-bottom: 16px;">
+                        <label>Additional Conditions</label>
+                        <textarea id="additionalConditions" rows="3" class="input-control"
+                            onchange="setAdditionalConditions(this.value)"
+                            placeholder="e.g. Freight extra, payment within 30 days..."></textarea>
+                    </div>
                 </div>
-                <div class="input-group" style="margin-bottom: 16px;">
-                    <label>Tax Rate (%)</label>
-                    <input type="number" id="taxRate" value="18" min="0" max="100" onchange="setTaxRate(this.value)"
-                        class="input-control">
-                </div>
-                <label class="checkbox-group">
-                    <input type="checkbox" id="includeTax" checked onchange="setIncludeTax(this.checked)">
-                    <span>Include Tax in Final Quote</span>
-                </label>
             </div>
 
             <div
@@ -190,7 +235,7 @@
     <div id="databaseModal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>Database Manager</h2>
+                <h2>Price List Manager</h2>
                 <button class="btn btn-icon" onclick="closeModal('databaseModal')">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                         stroke-linecap="round" stroke-linejoin="round">
@@ -201,47 +246,22 @@
             </div>
             <div class="modal-body">
 
-                <div class="upload-box"
-                    style="border-color: var(--brand-orange); background: var(--brand-orange-light);">
-                    <h3 style="color: var(--brand-orange-hover);">Cloud Sync: Manage Google Sheets</h3>
-                    <p class="hint">Paste links to your live pricing sheets. Ensure they are set to "Anyone with the
-                        link can view".</p>
-
-                    <div style="display: flex; gap: 10px; margin-top: 10px; align-items: center;">
-                        <input type="text" id="newSheetUrl" placeholder="https://docs.google.com/spreadsheets/d/..."
-                            class="input-control" style="flex: 1;">
-                        <button class="btn btn-primary" onclick="addSheetUrl()">Add Link</button>
-                    </div>
-
-                    <div style="margin-top: 15px;">
-                        <ul id="savedSheetsList"
-                            style="list-style: none; padding: 0; margin: 0; max-height: 150px; overflow-y: auto;">
-                        </ul>
-                    </div>
-
-                    <div
-                        style="display: flex; gap: 10px; margin-top: 15px; align-items: center; justify-content: space-between; border-top: 1px solid #f9cdab; padding-top: 15px;">
-                        <button class="btn btn-primary" onclick="syncAllSheets()">🔄 Sync All Sheets Now</button>
-                        <span id="sheetSyncStatus" class="status-badge" style="opacity: 0;">Ready</span>
-                    </div>
-                </div>
-
                 <div class="upload-box danger-zone">
                     <h2 style="color: red; margin-bottom: 30px;">File Uploads</h2>
                     <h3>Step 1: Upload Master Rate Cards</h3>
-                    <p class="hint">Ensure files are .csv format and contain SkuTitle and ERP columns.</p>
+                    <p class="hint">Accepts .csv or .xlsx/.xls files and must contain SkuTitle and ERP columns.</p>
                     <div style="display: flex; gap: 10px; margin-top: 10px; align-items: center; margin-bottom: 20px;">
-                        <input type="file" id="csvFileInput" accept=".csv" multiple class="input-control"
+                        <input type="file" id="csvFileInput" accept=".csv,.xlsx,.xls" multiple class="input-control"
                             style="width: auto;">
                         <button class="btn btn-primary" onclick="processCSV()">Load Catalog</button>
                         <span id="uploadStatus" class="status-badge" style="opacity: 0;">Status</span>
                     </div>
 
                     <h3>Optional Step 2: Apply No-Rebate Rules</h3>
-                    <p class="hint">Upload a CSV containing locked SKUs. The tool will cross-reference your memory and
-                        lock discounts.</p>
+                    <p class="hint">Upload a CSV or Excel file containing locked SKUs. The tool will cross-reference
+                        your memory and lock discounts.</p>
                     <div style="display: flex; gap: 10px; margin-top: 10px; align-items: center;">
-                        <input type="file" id="nrFileInput" accept=".csv" class="input-control"
+                        <input type="file" id="nrFileInput" accept=".csv,.xlsx,.xls" class="input-control"
                             style="width: auto; border-color: #fca5a5;">
                         <button class="btn btn-danger" onclick="processNoRebateCSV()">Lock SKUs</button>
                         <span id="nrUploadStatus" class="status-badge" style="opacity: 0;">Status</span>
@@ -251,8 +271,12 @@
                 <div
                     style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 10px; margin-top: 30px;">
                     <h3 style="margin:0;">Data Preview <span class="hint">(Top 100 Rows)</span></h3>
-                    <button class="btn btn-small" style="color: var(--danger);" onclick="clearMemory()">⚠️ Wipe Entire
-                        DB</button>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn btn-small" style="color: var(--danger);"
+                            onclick="clearNoRebateSkus()">⚠️ Wipe No-Rebate SKUs</button>
+                        <button class="btn btn-small" style="color: var(--danger);" onclick="clearMemory()">⚠️ Wipe
+                            Catalog</button>
+                    </div>
                 </div>
 
                 <div
@@ -278,7 +302,7 @@
     <div id="aboutModal" class="modal-overlay">
         <div class="modal-content" style="max-width: 600px;">
             <div class="modal-header">
-                <h2>Stop Fighting Excel. Start Closing Deals.</h2>
+                <h2>About This Tool</h2>
                 <button class="btn btn-icon" onclick="closeModal('aboutModal')">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                         stroke-linecap="round" stroke-linejoin="round">
@@ -289,37 +313,35 @@
             </div>
             <div class="modal-body" style="line-height: 1.6;">
                 <p style="margin-top: 0; font-size: 1.05rem; color: var(--text-main);">
-                    This quoting engine was built to eliminate the friction of massive, slow-loading corporate rate
-                    cards. It pulls the entire pricing database directly into your browser's local memory, giving you
-                    sub-second search speeds even when you are on a terrible connection.
+                    A browser-based quoting tool. Load your price list once, search and build a quote,
+                    then export an email-ready table &mdash; all processed locally, no server round-trips.
                 </p>
 
                 <h3
                     style="margin-top: 24px; color: var(--brand-orange-hover); border-bottom: 1px solid var(--border-light); padding-bottom: 8px;">
-                    The Value to You</h3>
+                    Core Features</h3>
 
                 <ul
                     style="padding-left: 20px; color: var(--text-main); display: flex; flex-direction: column; gap: 12px;">
                     <li>
-                        <strong>Sub-Second Execution:</strong> Stop waiting for spreadsheets to calculate. Find exact
-                        SKUs instantly while the client is still talking.
+                        <strong>Instant Search:</strong> Price list is loaded into memory for sub-second lookups across
+                        every uploaded catalog.
                     </li>
                     <li>
-                        <strong>Margin Armor:</strong> The tool automatically flags and locks "No Rebate" (NR) SKUs.
-                        This prevents accidental over-discounting on protected hardware, securing your commission.
+                        <strong>No-Rebate Lock:</strong> SKUs flagged as "No Rebate" (NR) have discounting disabled,
+                        preventing accidental over-discounting.
                     </li>
                     <li>
-                        <strong>Live Cloud Sync:</strong> Forget asking if you have the "latest version" of a file.
-                        Click sync to pull today's active prices straight from the master cloud sheets.
+                        <strong>Multi-Year Discount Split:</strong> Give a SKU different discounts per year across a
+                        3-year breakup without duplicating it or inflating the quantity/total.
                     </li>
                     <li>
-                        <strong>Deal Workspaces:</strong> Managing three different revisions for the same client? Save
-                        and name individual quote baskets to jump between deals without losing your work.
+                        <strong>Saved Quotes:</strong> Save, duplicate, search, export/import, and bulk-delete named
+                        quote baskets so you can jump between deals without losing work.
                     </li>
                     <li>
-                        <strong>Outlook-Ready Output:</strong> No more fighting with PDF formatting. Generate the quote,
-                        copy it to your clipboard, and paste a perfectly formatted, professional HTML table directly
-                        into your email draft.
+                        <strong>Email-Ready Output:</strong> Generate a quote and copy a formatted HTML table straight
+                        into Outlook or Gmail, with tax and grand total calculated automatically.
                     </li>
                 </ul>
 

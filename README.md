@@ -71,7 +71,9 @@ locks. Previously imported Excel files must be imported again to load all sheets
 2. Search by product description, SKU, part number, or other imported details.
 3. Click a result to add it to the quote.
 4. Change **Qty** and **Extra Disc** for each line as needed. Discounts range
-   from 0% to 100%; **Final Sell** and **Ext Total** update automatically.
+   from 0% to 100%; the increase/decrease controls move in 0.25 percentage-point
+   steps, including the default and per-year discounts. **Final Sell** and
+   **Ext Total** update automatically.
 5. Use a line's remove button to delete it, or **Clear Quote** to empty the
    current quote.
 
@@ -87,6 +89,9 @@ retained in **Saved Quotes**.
 ## 3. Configure pricing and quote details
 
 Open the sidebar's **Settings** tab:
+
+Use **Price List Manager** under **Price Lists** to open the catalog import
+and management dialog. The header's Price List Manager button is also available.
 
 | Setting | How to use it |
 | --- | --- |
@@ -155,6 +160,13 @@ Saved quote exports do not back up the full price catalog or global settings.
 Keep your original price-list files so you can import them again.
 
 ## Browser storage and troubleshooting
+
+### Using a phone
+
+The quote cart uses labeled product cards on small screens, with larger inputs
+and touch buttons. Scroll down below the cart actions for **Saved Quotes** and
+**Settings**. Price-list previews and generated email tables scroll horizontally
+inside their panels; the copied email keeps its table layout.
 
 - Catalogs, the current quote, saved quotes, and most quote settings are stored
   in your browser's local storage. They do not automatically sync to another

@@ -121,6 +121,7 @@ h3 { color: var(--brand-dark); margin: 0 0 12px 0; font-size: 1rem; font-weight:
 /* Quote Builder Area */
 .cart-wrapper {
     flex: 1;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     background: var(--bg-card);
@@ -159,7 +160,7 @@ h3 { color: var(--brand-dark); margin: 0 0 12px 0; font-size: 1rem; font-weight:
     position: relative;
 }
 
-.input-group { display: flex; flex-direction: column; gap: 6px; }
+.input-group { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .input-group label { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
 
 .input-control {
@@ -319,26 +320,81 @@ tfoot td { padding: 14px 16px; border-top: 2px solid var(--border-light); border
     .autocomplete-results { left: 0; }
 }
 
-/* Mobile: tighten spacing, enlarge touch targets, hide secondary button labels */
+/* Mobile: render the editable cart as cards without changing the email table. */
 @media (max-width: 640px) {
-    body { font-size: 13px; }
+    body { font-size: 16px; }
     .header-container { padding: 0 12px; height: auto; min-height: 56px; flex-wrap: wrap; gap: 8px; padding-top: 8px; padding-bottom: 8px; }
     .logo-placeholder { font-size: 1.05rem; }
     .header-actions { gap: 6px; flex-wrap: wrap; }
     .header-actions .btn-label { display: none; }
     .header-actions .btn { padding: 10px; }
+    .btn, .btn-icon, .sidebar-tab-btn { min-height: 44px; min-width: 44px; }
+    .btn, .btn-small, .sidebar-tab-btn { font-size: 0.95rem; }
+    .input-control, .disc-wrapper input { font-size: 16px; min-height: 44px; }
+    .input-group label, .quote-name-label { font-size: 0.8rem; }
+    .hint { font-size: 0.875rem; overflow-wrap: anywhere; }
+    .checkbox-group { min-height: 44px; font-size: 1rem; }
+    .checkbox-group input[type="checkbox"] { width: 22px; height: 22px; flex-shrink: 0; }
 
     .main-content { padding: 10px; gap: 10px; }
     .search-controls { padding: 14px; }
     .cart-header-bar { padding: 12px 14px; }
-    .quote-name-group { min-width: 100%; }
+    .quote-name-group { min-width: 0; width: 100%; flex-basis: 100%; flex-wrap: wrap; }
+    .quote-name-input { min-width: 0; flex: 1; }
     .cart-body-footer { padding: 14px; justify-content: stretch; }
-    .cart-footer-btn { flex: 1 1 auto; max-width: none; }
+    .cart-footer-btn { flex: 1 1 100%; max-width: none; }
 
-    .control-sidebar { padding: 14px; max-height: 60vh; }
+    .control-sidebar { padding: 14px; max-height: none; overflow: visible; }
+    .autocomplete-results { max-height: 50vh; }
+    .autocomplete-item { align-items: flex-start; flex-direction: column; gap: 8px; }
+    .autocomplete-item-title { font-size: 1rem; overflow-wrap: anywhere; }
+    .autocomplete-item-price { font-size: 1rem; }
+    #builderTable { display: block; min-width: 0; }
+    #builderTable thead {
+        position: absolute; width: 1px; height: 1px; overflow: hidden;
+        clip-path: inset(50%); white-space: nowrap;
+    }
+    #builderBody, #builderFooter { display: block; padding: 12px; }
+    #builderBody tr {
+        display: block; border: 1px solid var(--border-light);
+        border-radius: var(--radius-md); margin-bottom: 12px; overflow: hidden;
+    }
+    #builderBody tr:last-child { margin-bottom: 0; }
+    #builderBody td { display: block; font-size: 1rem; padding: 12px; overflow-wrap: anywhere; }
+    #builderBody td[data-label] {
+        display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr);
+        align-items: center; gap: 12px;
+    }
+    #builderBody td[data-label]::before {
+        content: attr(data-label); text-align: left; font-size: 0.875rem;
+        font-weight: 600; color: var(--text-muted);
+    }
+    #builderBody td[data-label] > div { justify-content: flex-end !important; }
+    #builderBody .product-cell { background: #f8fafc; line-height: 1.5; }
+    #builderBody .remove-cell { text-align: right !important; border-bottom: 0; }
+    #builderBody .link-btn { min-height: 44px; font-size: 0.9rem; text-align: left; }
+    .disc-wrapper input { width: 76px; }
+    .year-disc-stack { gap: 10px; }
+    .year-label { font-size: 0.8rem; width: auto; }
+    #builderFooter tr { display: flex; justify-content: space-between; gap: 12px; }
+    #builderFooter td { position: static; padding: 12px 0; font-size: 1rem; }
+    #builderFooter td:empty { display: none; }
+    #savedBasketsList { max-height: none !important; }
+    #savedBasketsList input[type="checkbox"] { width: 22px !important; height: 22px !important; }
+    #savedBasketsList li > div { min-width: 0; }
+    #savedBasketsList li > div > div:first-child { font-size: 1rem !important; }
+    #savedBasketsList li > div > div:nth-child(2) { font-size: 0.85rem !important; }
+    .modal-overlay { padding: 8px; }
+    .modal-content { max-height: 96vh; max-height: 96dvh; min-width: 0; }
     .modal-body { padding: 16px; }
     .modal-header { padding: 14px 16px; }
     .modal-footer { padding: 12px 16px; flex-wrap: wrap; }
+    .modal-header h2 { margin-bottom: 0; }
+    .modal-body input[type="file"] { width: 100% !important; min-width: 0; }
+    .upload-box { padding: 12px; }
+    .status-badge { overflow-wrap: anywhere; }
+    #emailOutputArea { padding: 10px; }
+    #toast { left: 12px; right: 12px; bottom: 12px; }
 
     .btn-icon { padding: 10px; }
     th, td { padding: 10px; font-size: 0.8rem; }
@@ -347,4 +403,3 @@ tfoot td { padding: 14px 16px; border-top: 2px solid var(--border-light); border
     .modal-body [style*="display: flex"],
     .sidebar-tab-panel [style*="display: flex"] { flex-wrap: wrap; }
 }
-

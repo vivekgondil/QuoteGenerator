@@ -173,10 +173,17 @@
 
             <div class="sidebar-tab-panel" data-tab-panel="settings">
                 <div class="sidebar-section">
+                    <h2>Price Lists</h2>
+                    <button type="button" class="btn input-control" onclick="openDatabaseModal()">
+                        Price List Manager
+                    </button>
+                    <p class="hint">Import price lists, apply No-Rebate rules, and manage your catalog.</p>
+                </div>
+                <div class="sidebar-section">
                     <h2>Settings</h2>
                     <div class="input-group" style="margin-bottom: 16px;">
                         <label>Default Margin Discount (%)</label>
-                        <input type="number" id="defaultDiscount" value="0" min="0" max="100" class="input-control">
+                        <input type="number" id="defaultDiscount" value="0" min="0" max="100" step="0.25" class="input-control">
                         <span class="hint">Applied automatically to new items added to cart.</span>
                     </div>
                     <div class="input-group" style="margin-bottom: 16px;">

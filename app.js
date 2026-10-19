@@ -422,7 +422,7 @@ function renderUI() {
                     ${item.yearDiscounts.map((disc, i) => `
                         <div class="disc-wrapper">
                             <span class="year-label">Y${i + 1}</span>
-                            <input type="number" value="${disc}" onchange="setYearDiscount(${item.cartId}, ${i}, this.value)" ${disableInput}>
+                            <input type="number" min="0" max="100" step="0.25" value="${disc}" onchange="setYearDiscount(${item.cartId}, ${i}, this.value)" ${disableInput}>
                             <span style="font-size: 11px; color: var(--text-muted);">%</span>
                         </div>
                     `).join('')}
@@ -437,7 +437,7 @@ function renderUI() {
             discCell = `
                 <div style="display: flex; justify-content: center;">
                     <div class="disc-wrapper">
-                        <input type="number" value="${item.extraDiscPercent}" onchange="setDiscount(${item.cartId}, this.value)" ${disableInput}>
+                        <input type="number" min="0" max="100" step="0.25" value="${item.extraDiscPercent}" onchange="setDiscount(${item.cartId}, this.value)" ${disableInput}>
                         <span style="font-size: 11px; color: var(--text-muted);">%</span>
                     </div>
                 </div>
@@ -447,19 +447,19 @@ function renderUI() {
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td><div style="font-weight: 500;">${item.name} ${nrTag}</div>${multiYearBtn}</td>
-            <td style="text-align: right;">${formatINR(totals.baseUnitPrice)}</td>
-            <td>${discCell}</td>
-            <td style="text-align: right;">${priceCell}</td>
-            <td>
+            <td class="product-cell"><div style="font-weight: 500;">${item.name} ${nrTag}</div>${multiYearBtn}</td>
+            <td data-label="Base Cost" style="text-align: right;">${formatINR(totals.baseUnitPrice)}</td>
+            <td data-label="Extra Disc">${discCell}</td>
+            <td data-label="Final Sell" style="text-align: right;">${priceCell}</td>
+            <td data-label="Qty">
                 <div style="display: flex; justify-content: center;">
                     <div class="disc-wrapper">
                         <input type="number" class="qty-input" style="width: ${Math.max(String(item.qty).length + 2, 4)}ch;" value="${item.qty}" onchange="updateQty(${item.cartId}, this.value)" oninput="this.style.width = Math.max(this.value.length + 2, 4) + 'ch'">
                     </div>
                 </div>
             </td>
-            <td style="text-align: right; font-weight: 700;">${formatINR(totals.lineTotal)}${totals.isMultiYear ? '<div style="font-size: 10px; font-weight: 400; color: var(--text-muted);">3-yr total</div>' : ''}</td>
-            <td style="text-align: center;">
+            <td data-label="Ext Total" style="text-align: right; font-weight: 700;">${formatINR(totals.lineTotal)}${totals.isMultiYear ? '<div style="font-size: 10px; font-weight: 400; color: var(--text-muted);">3-yr total</div>' : ''}</td>
+            <td class="remove-cell" style="text-align: center;">
                 <button class="btn-icon" onclick="removeItem(${item.cartId})" title="Remove item">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                 </button>

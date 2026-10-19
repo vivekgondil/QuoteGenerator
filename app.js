@@ -564,6 +564,7 @@ function renderEmailTable() {
             </table>
             <div style="max-width: 900px; margin-top: 16px; font-family: Arial, sans-serif; font-size: 13px; color: #333;">
                 <p style="margin: 4px 0;"><strong>Price Validity:</strong> Valid until ${formatDisplayDate(priceValidityDate)}</p>
+                ${!includeTax ? '<p style="margin: 4px 0;"><strong>Taxes:</strong> Taxes extra.</p>' : ''}
                 ${additionalConditions.trim() ? `<p style="margin: 4px 0; white-space: pre-wrap;"><strong>Additional Conditions:</strong> ${escapeHtml(additionalConditions.trim())}</p>` : ''}
             </div>
         </div>

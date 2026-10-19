@@ -92,7 +92,7 @@ Open the sidebar's **Settings** tab:
 | --- | --- |
 | Default Margin Discount (%) | Sets the starting extra discount for newly added products; existing lines are unchanged. |
 | Tax Rate (%) | Sets the tax percentage; the initial default is 18%. |
-| Include Tax in Final Quote | Controls whether tax is included in the generated totals. |
+| Include Tax in Final Quote | Controls whether tax is included in the generated totals. When unchecked, the quote's terms state "Taxes extra." |
 | Enable "Split into 3 years" discount feature | Shows the three-year discount option on eligible quote lines. |
 | Price Validity | Sets the validity date shown in the quote; initially defaults to the current month's last day. |
 | Additional Conditions | Adds payment terms, freight notes, or other conditions to the generated quote. |

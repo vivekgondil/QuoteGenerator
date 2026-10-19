@@ -8,11 +8,13 @@ let currentSearchResults = [];
 let searchTimeout = null;
 let savedBaskets = JSON.parse(localStorage.getItem('savedQuotesDatabase')) || [];
 let selectedBasketIds = new Set(); // Tracks checkbox selection for bulk export/delete (session-only, not persisted)
-// Gives each new quote a sequential name (Quote 1, Quote 2...) instead of a generic placeholder.
+// Unsaved drafts do not consume a number; only saved "Quote N" names count.
 function getNextQuoteName() {
-    const counter = (parseInt(localStorage.getItem('quoteNameCounter')) || 0) + 1;
-    localStorage.setItem('quoteNameCounter', String(counter));
-    return `Quote ${counter}`;
+    const highestNumber = savedBaskets.reduce((highest, basket) => {
+        const match = /^Quote (\d+)$/i.exec(basket.name.trim());
+        return match ? Math.max(highest, Number(match[1])) : highest;
+    }, 0);
+    return `Quote ${highestNumber + 1}`;
 }
 
 // Persisted so an in-progress quote keeps its id/name (and doesn't fork into a new entry) across reloads.
@@ -366,6 +368,15 @@ function setMultiYearSplitEnabled(isChecked) {
     multiYearSplitEnabled = isChecked;
     localStorage.setItem('multiYearSplitEnabled', String(multiYearSplitEnabled));
     renderUI();
+}
+
+function saveQuote() {
+    if (currentQuote.length === 0) {
+        showToast('Cart is empty', 'error');
+        return;
+    }
+    saveCurrentBasket();
+    showToast('Quote saved', 'success');
 }
 
 function generateQuote() {
@@ -1020,11 +1031,12 @@ function deleteSelectedBaskets() {
 }
 
 function startNewBasket() {
-    currentBasketId = Date.now().toString();
+    currentBasketId = Date.now().toString() + Math.random().toString(36).slice(2, 7);
     currentBasketName = getNextQuoteName();
     document.getElementById('basketNameInput').value = currentBasketName;
     persistCurrentBasketState();
     clearCart(); // Your existing function
+    renderSavedBaskets();
 }
 
 function calculateBasketTotal(items) {

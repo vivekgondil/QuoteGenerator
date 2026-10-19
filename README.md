@@ -76,7 +76,13 @@ locks. Previously imported Excel files must be imported again to load all sheets
    current quote.
 
 Use **New Quote** to start a separate quote with a new name and identity.
-Generate the current quote first if you want it retained in **Saved Quotes**.
+This clears the current quote's items. Automatic names use the highest saved
+`Quote N` number plus one: a saved `Quote 2` makes the next draft `Quote 3`.
+If there are no saved numbered quotes, the draft is named `Quote 1`.
+Starting unsaved drafts does not advance the number; custom names and names
+such as `Quote 2 (Copy)` do not count toward numbering.
+Click **Save Quote** or **Generate Quote** first if you want the current quote
+retained in **Saved Quotes**.
 
 ## 3. Configure pricing and quote details
 
@@ -127,7 +133,10 @@ the entire imported catalog and clears the current quote. Both require confirmat
 
 The output includes product descriptions, unit prices, quantities, line totals,
 and applicable discounts, tax, validity, and additional conditions.
-Generating an already saved quote updates that saved entry.
+To save without opening the email preview, click **Save Quote** below the cart.
+The quote stays in the editor and appears in **Saved Quotes**, with a save
+confirmation. Saving or generating an already saved quote updates that entry
+rather than creating a duplicate. Empty quotes cannot be saved.
 
 ## 6. Manage and back up saved quotes
 

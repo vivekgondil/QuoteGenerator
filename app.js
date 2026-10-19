@@ -193,7 +193,7 @@ function executeSearch() {
             return;
         }
 
-        let targetDB = activeCatalog !== 'all' ? pricingDatabase.filter(i => i.sourceFile === activeCatalog) : pricingDatabase;
+        let targetDB = activeCatalog !== 'all' ? pricingDatabase.filter(i => getCatalogId(i) === activeCatalog) : pricingDatabase;
 
         if (rawInput) {
             const searchTokens = rawInput.split(/\s+/);
@@ -221,7 +221,7 @@ function executeSearch() {
                 li.innerHTML = `
                     <div class="autocomplete-item-main">
                         <div class="autocomplete-item-title">${item.name} ${nrTag}</div>
-                        <div class="hint">Catalog: ${item.sourceFile}</div>
+                        <div class="hint">Catalog: ${escapeHtml(getCatalogLabel(item))}</div>
                     </div>
                     <div class="autocomplete-item-price">${formatINR(item.erp)}</div>
                 `;
@@ -575,7 +575,7 @@ function copyTable() {
     }
 }
 
-// --- Parsing Logic (Kept identical to protect the engine) ---
+// --- Parsing Logic ---
 function processCSV() {
     if (typeof Papa === 'undefined') return alert("Error: papaparse.min.js is missing!");
     if (typeof XLSX === 'undefined') return alert("Error: xlsx.min.js is missing!");
@@ -601,7 +601,7 @@ function processCSV() {
 
     // Shared row-ingestion logic so both CSV (PapaParse) and Excel (SheetJS) sources
     // land in the same pricingDatabase schema.
-    function ingestRows(rows, file) {
+    function ingestCatalogs(catalogs, file) {
         // Carry forward No-Rebate locks (matched by SKU/part IDs) so re-uploading an
         // updated price list doesn't silently unlock previously protected SKUs.
         const lockedSkuIds = new Set();
@@ -617,7 +617,11 @@ function processCSV() {
         pricingDatabase = pricingDatabase.filter(item => item.sourceFile !== file.name);
         totalReplaced += beforeCount - pricingDatabase.length;
 
-        const seenInThisFile = new Set();
+        catalogs.forEach(({ rows, sourceSheet }) => ingestRows(rows, file, sourceSheet, lockedSkuIds));
+    }
+
+    function ingestRows(rows, file, sourceSheet, lockedSkuIds) {
+        const seenInThisSheet = new Set();
 
         rows.forEach((row) => {
             const keyMap = {}; let searchBlobArray = []; let differentiatorArray = [];
@@ -666,13 +670,13 @@ function processCSV() {
 
                 const rawSkuMatches = buildSkuMatchKeys(row, skuIdKey, productIdKey, partNumberKey);
 
-                if (seenInThisFile.has(visualDisplayName)) { totalDuplicates++; return; }
-                seenInThisFile.add(visualDisplayName);
+                if (seenInThisSheet.has(visualDisplayName)) { totalDuplicates++; return; }
+                seenInThisSheet.add(visualDisplayName);
 
                 const isLocked = rawSkuMatches.some(id => id && lockedSkuIds.has(id));
 
                 pricingDatabase.push({
-                    id: Date.now() + Math.random(), sourceFile: file.name, name: visualDisplayName, title: row[nameKey].trim(),
+                    id: Date.now() + Math.random(), sourceFile: file.name, sourceSheet, name: visualDisplayName, title: row[nameKey].trim(),
                     searchBlob: searchBlobArray.join(" "), rawSkuMatches: rawSkuMatches, erp: parsedErp, unitSell: parsedUnitSell,
                     csvDiscPrice: parsedDiscPrice, isNoRebate: isLocked
                 });
@@ -693,9 +697,11 @@ function processCSV() {
             reader.onload = function (e) {
                 try {
                     const workbook = XLSX.read(e.target.result, { type: 'array' });
-                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                    const rows = XLSX.utils.sheet_to_json(firstSheet, { defval: '', raw: false, blankrows: false });
-                    ingestRows(rows, file);
+                    const catalogs = workbook.SheetNames.map(sourceSheet => ({
+                        sourceSheet,
+                        rows: XLSX.utils.sheet_to_json(workbook.Sheets[sourceSheet], { defval: '', raw: false, blankrows: false })
+                    }));
+                    ingestCatalogs(catalogs, file);
                 } catch (err) {
                     console.error("Failed to parse Excel file " + file.name, err);
                     totalFailed++;
@@ -712,7 +718,7 @@ function processCSV() {
             Papa.parse(file, {
                 header: true, skipEmptyLines: true,
                 complete: function (results) {
-                    ingestRows(results.data, file);
+                    ingestCatalogs([{ rows: results.data, sourceSheet: null }], file);
                     onFileDone();
                 }
             });
@@ -724,18 +730,26 @@ function updateMemoryDisplay() {
     document.getElementById('memoryStatus').innerText = `Total Loaded SKUs: ${pricingDatabase.length}`;
 }
 
+function getCatalogId(item) {
+    return item.sourceSheet == null ? item.sourceFile : JSON.stringify([item.sourceFile, item.sourceSheet]);
+}
+
+function getCatalogLabel(item) {
+    return item.sourceSheet == null ? item.sourceFile : `${item.sourceFile} - ${item.sourceSheet}`;
+}
+
 function updateFileDropdown() {
     const filterSelect = document.getElementById('fileFilter');
     const currentSelection = filterSelect.value;
     filterSelect.innerHTML = '<option value="all">-- Search All Catalogs --</option>';
-    const uniqueFiles = [...new Set(pricingDatabase.map(item => item.sourceFile))].sort();
-    uniqueFiles.forEach(fileName => {
+    const catalogs = new Map(pricingDatabase.map(item => [getCatalogId(item), getCatalogLabel(item)]));
+    [...catalogs].sort((a, b) => a[1].localeCompare(b[1])).forEach(([catalogId, label]) => {
         const opt = document.createElement('option');
-        opt.value = fileName;
-        opt.text = `Catalog: ${fileName}`;
+        opt.value = catalogId;
+        opt.text = `Catalog: ${label}`;
         filterSelect.appendChild(opt);
     });
-    if (uniqueFiles.includes(currentSelection)) filterSelect.value = currentSelection;
+    if (catalogs.has(currentSelection)) filterSelect.value = currentSelection;
 }
 
 function renderDbPreview() {
@@ -750,7 +764,7 @@ function renderDbPreview() {
         const badge = item.isNoRebate ? '<span class="tag-nr">NO REBATE</span>' : '<span style="color:#666; font-size:10px;">Standard</span>';
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td style="font-size: 11px; color: #666;">${item.sourceFile}</td>
+            <td style="font-size: 11px; color: #666;">${escapeHtml(getCatalogLabel(item))}</td>
             <td style="font-size: 12px; font-weight: bold;">${item.name}</td>
             <td>${formatINR(item.erp)}</td>
             <td>${formatINR(item.csvDiscPrice)}</td>
@@ -1145,5 +1159,3 @@ function renderSavedBaskets() {
         list.appendChild(li);
     });
 }
-
-

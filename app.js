@@ -122,6 +122,11 @@ function escapeHtml(str) {
     return div.innerHTML;
 }
 
+function formatProductName(item) {
+    const title = item.title && item.name.startsWith(item.title) ? item.title : item.name;
+    return `<strong>${escapeHtml(title)}</strong>${escapeHtml(item.name.slice(title.length))}`;
+}
+
 function parseMoneyString(str) {
     if (!str) return 0;
     const cleaned = parseFloat(str.toString().replace(/[^0-9.-]+/g, ""));
@@ -222,7 +227,7 @@ function executeSearch() {
 
                 li.innerHTML = `
                     <div class="autocomplete-item-main">
-                        <div class="autocomplete-item-title">${item.name} ${nrTag}</div>
+                        <div class="autocomplete-item-title">${formatProductName(item)} ${nrTag}</div>
                         <div class="hint">Catalog: ${escapeHtml(getCatalogLabel(item))}</div>
                     </div>
                     <div class="autocomplete-item-price">${formatINR(item.erp)}</div>
@@ -447,7 +452,7 @@ function renderUI() {
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td class="product-cell"><div style="font-weight: 500;">${item.name} ${nrTag}</div>${multiYearBtn}</td>
+            <td class="product-cell"><div>${formatProductName(item)} ${nrTag}</div>${multiYearBtn}</td>
             <td data-label="Base Cost" style="text-align: right;">${formatINR(totals.baseUnitPrice)}</td>
             <td data-label="Extra Disc">${discCell}</td>
             <td data-label="Final Sell" style="text-align: right;">${priceCell}</td>

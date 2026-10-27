@@ -8,6 +8,11 @@ let currentSearchResults = [];
 let searchTimeout = null;
 let savedBaskets = JSON.parse(localStorage.getItem('savedQuotesDatabase')) || [];
 let selectedBasketIds = new Set(); // Tracks checkbox selection for bulk export/delete (session-only, not persisted)
+// Declared here (not near initVoiceSearch below) so it's initialized before initApp() runs at
+// the bottom of this file; otherwise accessing it would throw a temporal-dead-zone error.
+const SpeechRecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
+let voiceRecognition = null;
+let isVoiceListening = false;
 // Consumed once on startup by populateDifferentiatorKeyOptions/updateFileDropdown to restore
 // the catalog + "More Options" filter selections saved from the previous session.
 let pendingFilterRestore = JSON.parse(localStorage.getItem('searchFilterState')) || null;
@@ -190,10 +195,6 @@ function saveCart() {
 }
 
 // --- Voice Search (Web Speech API) ---
-const SpeechRecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
-let voiceRecognition = null;
-let isVoiceListening = false;
-
 // Hides the mic button entirely on browsers without speech recognition support (e.g. Firefox)
 // instead of showing a control that would just fail silently when clicked.
 function initVoiceSearch() {

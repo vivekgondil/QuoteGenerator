@@ -52,15 +52,65 @@
                 <div class="search-grid">
                     <div class="input-group">
                         <label>Active Catalog</label>
-                        <select id="fileFilter" onchange="executeSearch()" class="input-control">
+                        <select id="fileFilter" onchange="handleCatalogFilterChange()" class="input-control">
                             <option value="all">Global Search (All Catalogs)</option>
                         </select>
                     </div>
                     <div class="input-group">
-                        <label>Search Product (SKU, Desc, Segment)</label>
-                        <input type="text" id="searchName" placeholder="Start typing to find products..."
-                            oninput="executeSearch()" onfocus="executeSearch()" autocomplete="off"
-                            class="input-control">
+                        <label>Search Product (SKU / Description)</label>
+                        <div class="search-input-wrapper">
+                            <input type="text" id="searchName" placeholder="Start typing to find products..."
+                                oninput="executeSearch()" onfocus="executeSearch()" autocomplete="off"
+                                class="input-control">
+                            <button type="button" id="voiceSearchBtn" class="voice-search-btn"
+                                onclick="toggleVoiceSearch()" title="Search by voice">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                                    <line x1="12" y1="19" x2="12" y2="23"></line>
+                                    <line x1="8" y1="23" x2="16" y2="23"></line>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>&nbsp;</label>
+                        <button type="button" id="filterToggleBtn" class="btn btn-small filter-toggle-btn"
+                            onclick="toggleFilterPanel()" title="Filter by Billing Term, Segment, etc.">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                            </svg>
+                            Filters <span id="filterCountBadge" class="filter-count-badge" style="display:none;">0</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="filterPanel" class="filter-panel">
+                    <div class="filter-panel-header">
+                        <span>Advanced Filters</span>
+                        <button type="button" class="btn-link" onclick="clearAllDifferentiatorFilters()">Clear all</button>
+                    </div>
+                    <div class="filter-facets">
+                        <div class="filter-facet" data-filter-index="0">
+                            <select class="input-control filter-key-select" onchange="handleDifferentiatorKeyChange(0)">
+                                <option value="">Choose a field…</option>
+                            </select>
+                            <div class="filter-chip-list"></div>
+                        </div>
+                        <div class="filter-facet" data-filter-index="1">
+                            <select class="input-control filter-key-select" onchange="handleDifferentiatorKeyChange(1)">
+                                <option value="">Choose a field…</option>
+                            </select>
+                            <div class="filter-chip-list"></div>
+                        </div>
+                        <div class="filter-facet" data-filter-index="2">
+                            <select class="input-control filter-key-select" onchange="handleDifferentiatorKeyChange(2)">
+                                <option value="">Choose a field…</option>
+                            </select>
+                            <div class="filter-chip-list"></div>
+                        </div>
                     </div>
                 </div>
 

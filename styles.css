@@ -147,7 +147,7 @@ h3 { color: var(--brand-dark); margin: 0 0 12px 0; font-size: 1rem; font-weight:
 
 /* Search Area & Custom Dropdown */
 .search-controls {
-    padding: 20px;
+    padding: 16px 20px;
     border-bottom: 1px solid var(--border-light);
     background: #f8fafc;
     position: relative;
@@ -155,7 +155,7 @@ h3 { color: var(--brand-dark); margin: 0 0 12px 0; font-size: 1rem; font-weight:
 
 .search-grid {
     display: grid;
-    grid-template-columns: 200px 1fr;
+    grid-template-columns: 200px 1fr auto;
     gap: 16px;
     position: relative;
 }
@@ -175,6 +175,155 @@ h3 { color: var(--brand-dark); margin: 0 0 12px 0; font-size: 1rem; font-weight:
 }
 .input-control:focus { outline: none; border-color: var(--brand-orange); box-shadow: 0 0 0 3px rgba(242, 114, 34, 0.15); }
 .input-control:disabled { background: #f1f5f9; color: #94a3b8; cursor: not-allowed; }
+
+.search-input-wrapper { position: relative; display: flex; }
+.search-input-wrapper .input-control { padding-right: 38px; }
+.voice-search-btn {
+    position: absolute;
+    right: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 50%;
+    background: none;
+    color: var(--text-muted);
+    cursor: pointer;
+}
+.voice-search-btn:hover { background: var(--border-light); color: var(--brand-dark); }
+.voice-search-btn.listening {
+    color: #fff;
+    background: var(--danger);
+    animation: voicePulse 1.2s infinite;
+}
+@keyframes voicePulse {
+    0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5); }
+    70% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+/* Compact "Filters" toggle button, sits in the search row instead of a permanent row of
+   extra controls so the cart below doesn't lose vertical space when filters are unused. */
+.filter-toggle-btn {
+    position: relative;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 100%;
+    color: var(--text-muted);
+}
+.filter-toggle-btn:hover { color: var(--brand-dark); }
+.filter-toggle-btn.has-active-filters {
+    border-color: var(--brand-orange);
+    background: var(--brand-orange-light);
+    color: var(--brand-orange-hover);
+}
+.filter-count-badge {
+    display: inline-block;
+    background: var(--brand-orange);
+    color: #fff;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    line-height: 1;
+    min-width: 8px;
+    text-align: center;
+    padding: 3px 6px;
+}
+
+/* Floats over the page instead of occupying grid space, so opening it never shrinks the cart. */
+.filter-panel {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    width: 420px;
+    max-width: calc(100vw - 40px);
+    max-height: 75vh;
+    overflow-y: auto;
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    margin-top: 8px;
+    padding: 18px;
+    z-index: 1001;
+    display: none;
+}
+.filter-panel.active { display: block; animation: filterPanelIn 0.12s ease-out; }
+@keyframes filterPanelIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.filter-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    color: var(--text-main);
+    padding-bottom: 12px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid var(--border-light);
+}
+.btn-link {
+    background: none;
+    border: none;
+    color: var(--brand-orange);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: none;
+    letter-spacing: normal;
+    cursor: pointer;
+    padding: 0;
+}
+.btn-link:hover { color: var(--brand-orange-hover); text-decoration: underline; }
+
+.filter-facets { display: flex; flex-direction: column; gap: 16px; }
+.filter-facet { display: flex; flex-direction: column; gap: 8px; }
+.filter-facet .filter-key-select { font-size: 0.8rem; font-weight: 600; }
+
+.filter-chip-list {
+    display: flex;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    gap: 6px;
+    min-height: 0;
+    max-height: 120px;
+    overflow-y: auto;
+}
+.filter-chip-list:empty { display: none; }
+.filter-chip-list.is-empty::after {
+    content: 'No values available for this field.';
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+.filter-chip {
+    border: 1px solid var(--border-light);
+    background: var(--bg-main);
+    color: var(--text-main);
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 5px 12px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+    white-space: nowrap;
+}
+.filter-chip:hover { border-color: var(--brand-orange); }
+.filter-chip.active {
+    background: var(--brand-orange);
+    border-color: var(--brand-orange);
+    color: #fff;
+    font-weight: 600;
+}
 
 /* The new Floating Autocomplete Menu */
 .autocomplete-results {

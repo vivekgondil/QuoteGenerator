@@ -8,6 +8,9 @@ let currentSearchResults = [];
 let searchTimeout = null;
 let savedBaskets = JSON.parse(localStorage.getItem('savedQuotesDatabase')) || [];
 let selectedBasketIds = new Set(); // Tracks checkbox selection for bulk export/delete (session-only, not persisted)
+// Consumed once on startup by populateDifferentiatorKeyOptions/updateFileDropdown to restore
+// the catalog + "More Options" filter selections saved from the previous session.
+let pendingFilterRestore = JSON.parse(localStorage.getItem('searchFilterState')) || null;
 // Unsaved drafts do not consume a number; only saved "Quote N" names count.
 function getNextQuoteName() {
     const highestNumber = savedBaskets.reduce((highest, basket) => {
@@ -58,12 +61,20 @@ function initApp() {
     const multiYearCheck = document.getElementById('multiYearSplitToggle');
     if (multiYearCheck) multiYearCheck.checked = multiYearSplitEnabled;
 
+    initVoiceSearch();
+
     // Close autocomplete when clicking outside
     document.addEventListener('click', (e) => {
         const autocompleteList = document.getElementById('autocompleteResults');
         const searchInput = document.getElementById('searchName');
         if (autocompleteList && e.target !== searchInput && !autocompleteList.contains(e.target)) {
             autocompleteList.classList.remove('active');
+        }
+
+        const filterPanel = document.getElementById('filterPanel');
+        const filterToggleBtn = document.getElementById('filterToggleBtn');
+        if (filterPanel && !filterPanel.contains(e.target) && !filterToggleBtn.contains(e.target)) {
+            filterPanel.classList.remove('active');
         }
     });
 }
@@ -178,6 +189,83 @@ function saveCart() {
     localStorage.setItem('quoteCart', JSON.stringify(currentQuote));
 }
 
+// --- Voice Search (Web Speech API) ---
+const SpeechRecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
+let voiceRecognition = null;
+let isVoiceListening = false;
+
+// Hides the mic button entirely on browsers without speech recognition support (e.g. Firefox)
+// instead of showing a control that would just fail silently when clicked.
+function initVoiceSearch() {
+    const voiceBtn = document.getElementById('voiceSearchBtn');
+    if (!voiceBtn) return;
+    if (!SpeechRecognitionCtor) {
+        voiceBtn.style.display = 'none';
+        return;
+    }
+
+    voiceRecognition = new SpeechRecognitionCtor();
+    voiceRecognition.continuous = false;
+    voiceRecognition.interimResults = false;
+    voiceRecognition.lang = 'en-IN';
+
+    voiceRecognition.onresult = (e) => {
+        const searchInput = document.getElementById('searchName');
+        searchInput.value = e.results[0][0].transcript;
+        executeSearch();
+        searchInput.focus();
+    };
+    voiceRecognition.onerror = (e) => {
+        if (e.error !== 'aborted' && e.error !== 'no-speech') showToast('Voice search error: ' + e.error, 'error');
+    };
+    voiceRecognition.onend = () => setVoiceListening(false);
+}
+
+function setVoiceListening(listening) {
+    isVoiceListening = listening;
+    const voiceBtn = document.getElementById('voiceSearchBtn');
+    if (voiceBtn) voiceBtn.classList.toggle('listening', listening);
+}
+
+function toggleVoiceSearch() {
+    if (!voiceRecognition) return;
+    if (isVoiceListening) {
+        voiceRecognition.stop();
+        return;
+    }
+    try {
+        voiceRecognition.start();
+        setVoiceListening(true);
+    } catch (err) {
+        console.error('Voice search failed to start', err);
+    }
+}
+
+// Ranks a match so the most relevant products surface first: an exact/prefix hit on the
+// product title beats a title hit, which beats a hit buried elsewhere in the blob (SKU code,
+// publisher, etc.), with a small tie-breaker favoring shorter, more precise titles.
+function computeMatchScore(item, searchTokens, squishedQuery) {
+    const squishedTitle = (item.title || item.name).toLowerCase().replace(/[^a-z0-9]/g, '');
+    const squishedBlob = item.searchBlob.replace(/[^a-z0-9]/g, '');
+
+    let score = 0;
+    if (squishedQuery) {
+        if (squishedTitle === squishedQuery) score += 1000;
+        else if (squishedTitle.startsWith(squishedQuery)) score += 500;
+        else if (squishedTitle.includes(squishedQuery)) score += 250;
+    }
+
+    searchTokens.forEach(token => {
+        const squishedToken = token.replace(/[^a-z0-9]/g, '');
+        if (!squishedToken) return;
+        if (squishedTitle.includes(squishedToken)) score += 50;
+        else if (squishedBlob.includes(squishedToken)) score += 10;
+    });
+
+    score -= squishedTitle.length * 0.01;
+    return score;
+}
+
 // --- Dynamic Search (Fixed Catalog Selection) ---
 function executeSearch() {
     clearTimeout(searchTimeout);
@@ -193,24 +281,36 @@ function executeSearch() {
             return;
         }
 
-        // Fix: If no text is typed AND we are on 'All Catalogs', hide the dropdown.
-        // But if a specific catalog is selected, we want to show the first 50 items inside it.
-        if (!rawInput && activeCatalog === 'all') {
+        // Fix: If no text is typed AND we are on 'All Catalogs' AND no extra filter is active, hide the dropdown.
+        // But if a specific catalog or a "More Options" filter is selected, show a browsing preview.
+        const activeFilters = getActiveDifferentiatorFilters();
+        if (!rawInput && activeCatalog === 'all' && activeFilters.length === 0) {
             listEl.classList.remove('active');
             return;
         }
 
         let targetDB = activeCatalog !== 'all' ? pricingDatabase.filter(i => getCatalogId(i) === activeCatalog) : pricingDatabase;
 
+        if (activeFilters.length > 0) {
+            targetDB = targetDB.filter(item => activeFilters.every(f =>
+                (item.differentiators || []).some(d => d.label === f.key && f.values.includes(d.value))
+            ));
+        }
+
         if (rawInput) {
             const searchTokens = rawInput.split(/\s+/);
+            const squishedQuery = rawInput.replace(/[^a-z0-9]/g, '');
             currentSearchResults = targetDB.filter(item => {
                 const squishedBlob = item.searchBlob.replace(/[^a-z0-9]/g, '');
                 return searchTokens.every(token => {
                     const squishedToken = token.replace(/[^a-z0-9]/g, '');
                     return squishedToken === '' ? true : squishedBlob.includes(squishedToken);
                 });
-            }).slice(0, 50);
+            })
+                .map(item => ({ item, score: computeMatchScore(item, searchTokens, squishedQuery) }))
+                .sort((a, b) => b.score - a.score)
+                .slice(0, 50)
+                .map(entry => entry.item);
         } else {
             // Provide a browsing preview if just selecting a catalog
             currentSearchResults = targetDB.slice(0, 50);
@@ -641,17 +741,21 @@ function processCSV() {
         const seenInThisSheet = new Set();
 
         rows.forEach((row) => {
-            const keyMap = {}; let searchBlobArray = []; let differentiatorArray = [];
+            const keyMap = {}; let searchBlobArray = []; let differentiatorArray = []; let differentiatorFields = [];
             Object.keys(row).forEach(rawKey => {
                 const val = row[rawKey] ? row[rawKey].toString().trim() : "";
                 const cleanKey = rawKey.toLowerCase().replace(/[^a-z0-9]/g, '');
                 keyMap[cleanKey] = rawKey;
                 if (val) {
                     const isPriceColumn = cleanKey.match(/erp|listprice|unitsell|price|discountedprice|cost/);
-                    if (!isPriceColumn) searchBlobArray.push(val.toLowerCase());
                     const isCoreColumn = cleanKey.match(/skutitle|producttitle|productname|description|skuid|productid|partnumber|publisher|changeindicator|itemnumber|sku/);
+                    // Only core identity columns feed the free-text search index so a stray word in an
+                    // unrelated column (billing term, segment, etc.) can't balloon the result list. Those
+                    // extra columns are still searchable, but only via the explicit "More Options" filters.
+                    if (!isPriceColumn && isCoreColumn) searchBlobArray.push(val.toLowerCase());
                     if (!isCoreColumn && !isPriceColumn && val.toLowerCase() !== "null" && val.toLowerCase() !== "na") {
                         differentiatorArray.push(val);
+                        differentiatorFields.push({ label: rawKey.trim(), value: val });
                     }
                 }
             });
@@ -695,7 +799,7 @@ function processCSV() {
                 pricingDatabase.push({
                     id: Date.now() + Math.random(), sourceFile: file.name, sourceSheet, name: visualDisplayName, title: row[nameKey].trim(),
                     searchBlob: searchBlobArray.join(" "), rawSkuMatches: rawSkuMatches, erp: parsedErp, unitSell: parsedUnitSell,
-                    csvDiscPrice: parsedDiscPrice, isNoRebate: isLocked
+                    csvDiscPrice: parsedDiscPrice, isNoRebate: isLocked, differentiators: differentiatorFields
                 });
                 totalAdded++;
             } else totalFailed++;
@@ -766,7 +870,149 @@ function updateFileDropdown() {
         opt.text = `Catalog: ${label}`;
         filterSelect.appendChild(opt);
     });
-    if (catalogs.has(currentSelection)) filterSelect.value = currentSelection;
+    // A pending restore (from a previous session) takes priority over the dropdown's current
+    // in-memory value, since that value is just the unselected "all" placeholder on first load.
+    if (pendingFilterRestore && catalogs.has(pendingFilterRestore.activeCatalog)) filterSelect.value = pendingFilterRestore.activeCatalog;
+    else if (catalogs.has(currentSelection)) filterSelect.value = currentSelection;
+    populateDifferentiatorKeyOptions();
+}
+
+// Items in the catalog currently selected in the "Active Catalog" dropdown (or the whole
+// database when "All Catalogs" is active). Shared by the search and the "More Options" filters.
+function getCatalogScopedDB() {
+    const activeCatalog = document.getElementById('fileFilter').value;
+    return activeCatalog !== 'all' ? pricingDatabase.filter(i => getCatalogId(i) === activeCatalog) : pricingDatabase;
+}
+
+// Populates every "Advanced Filters" facet with the distinct differentiator columns (e.g.
+// Billing Term, Segment) found in the current catalog scope, letting the user narrow results
+// to exact column/value combinations instead of relying on free-text matching alone.
+function populateDifferentiatorKeyOptions() {
+    const labels = new Set();
+    getCatalogScopedDB().forEach(item => (item.differentiators || []).forEach(d => labels.add(d.label)));
+    const sortedLabels = [...labels].sort((a, b) => a.localeCompare(b));
+    const restoreFacets = pendingFilterRestore ? pendingFilterRestore.facets || [] : null;
+
+    [...document.querySelectorAll('.filter-facet')].forEach((facet, index) => {
+        const keySelect = facet.querySelector('.filter-key-select');
+        const currentSelection = keySelect.value;
+
+        keySelect.innerHTML = '<option value="">Choose a field…</option>';
+        sortedLabels.forEach(label => {
+            const opt = document.createElement('option');
+            opt.value = label;
+            opt.text = label;
+            keySelect.appendChild(opt);
+        });
+        // Priority: a restored session beats everything (even an empty/cleared choice), then
+        // the facet's own live selection, then the "first 3 keys" default for brand-new panels.
+        if (restoreFacets) keySelect.value = labels.has((restoreFacets[index] || {}).key) ? restoreFacets[index].key : '';
+        else if (labels.has(currentSelection)) keySelect.value = currentSelection;
+        else keySelect.value = sortedLabels[index] || '';
+        populateDifferentiatorValueOptions(facet);
+    });
+    pendingFilterRestore = null; // consumed once; later catalog/DB changes rely on live DOM state
+    updateFilterCountBadge();
+}
+
+// Renders the available values for a facet as toggle chips instead of a native multi-select,
+// which is easier to scan and doesn't require ctrl/cmd-click to select more than one value.
+function populateDifferentiatorValueOptions(facet) {
+    const keySelect = facet.querySelector('.filter-key-select');
+    const chipList = facet.querySelector('.filter-chip-list');
+    const selectedKey = keySelect.value;
+    const index = Number(facet.dataset.filterIndex);
+    const domSelected = new Set([...chipList.querySelectorAll('.filter-chip.active')].map(c => c.dataset.value));
+    const restoreFacet = pendingFilterRestore ? (pendingFilterRestore.facets || [])[index] : null;
+    const wantedSelected = domSelected.size > 0 || !restoreFacet || restoreFacet.key !== selectedKey
+        ? domSelected
+        : new Set(restoreFacet.values || []);
+
+    chipList.innerHTML = '';
+    chipList.classList.remove('is-empty');
+    if (!selectedKey) return;
+
+    const values = new Set();
+    getCatalogScopedDB().forEach(item => (item.differentiators || []).forEach(d => {
+        if (d.label === selectedKey) values.add(d.value);
+    }));
+
+    if (values.size === 0) {
+        chipList.classList.add('is-empty');
+        return;
+    }
+
+    [...values].sort((a, b) => a.localeCompare(b)).forEach(value => {
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'filter-chip' + (wantedSelected.has(value) ? ' active' : '');
+        chip.dataset.value = value;
+        chip.textContent = value;
+        chip.onclick = () => {
+            chip.classList.toggle('active');
+            updateFilterCountBadge();
+            saveFilterState();
+            executeSearch();
+        };
+        chipList.appendChild(chip);
+    });
+}
+
+// Reads the current key + selected chip values out of each facet's DOM state (no separate
+// JS state to keep in sync). Facets without a key or without any selected value are ignored.
+function getActiveDifferentiatorFilters() {
+    return [...document.querySelectorAll('.filter-facet')].map(facet => {
+        const key = facet.querySelector('.filter-key-select').value;
+        const values = [...facet.querySelectorAll('.filter-chip.active')].map(c => c.dataset.value);
+        return { key, values };
+    }).filter(f => f.key && f.values.length > 0);
+}
+
+// Persists only the catalog + "More Options" filter selections (not the free-text search box)
+// so they're restored on the next page load.
+function saveFilterState() {
+    const activeCatalog = document.getElementById('fileFilter').value;
+    const facets = [...document.querySelectorAll('.filter-facet')].map(facet => ({
+        key: facet.querySelector('.filter-key-select').value,
+        values: [...facet.querySelectorAll('.filter-chip.active')].map(c => c.dataset.value)
+    }));
+    localStorage.setItem('searchFilterState', JSON.stringify({ activeCatalog, facets }));
+}
+
+function updateFilterCountBadge() {
+    const badge = document.getElementById('filterCountBadge');
+    const toggleBtn = document.getElementById('filterToggleBtn');
+    if (!badge || !toggleBtn) return;
+    const count = getActiveDifferentiatorFilters().length;
+    badge.textContent = count;
+    badge.style.display = count > 0 ? 'inline-block' : 'none';
+    toggleBtn.classList.toggle('has-active-filters', count > 0);
+}
+
+function toggleFilterPanel() {
+    document.getElementById('filterPanel').classList.toggle('active');
+}
+
+function clearAllDifferentiatorFilters() {
+    // Only deselect the chosen values; leave each facet's chosen field (key) alone.
+    document.querySelectorAll('.filter-chip.active').forEach(chip => chip.classList.remove('active'));
+    updateFilterCountBadge();
+    saveFilterState();
+    executeSearch();
+}
+
+function handleDifferentiatorKeyChange(rowIndex) {
+    const facet = document.querySelector(`.filter-facet[data-filter-index="${rowIndex}"]`);
+    populateDifferentiatorValueOptions(facet);
+    updateFilterCountBadge();
+    saveFilterState();
+    executeSearch();
+}
+
+function handleCatalogFilterChange() {
+    populateDifferentiatorKeyOptions();
+    saveFilterState();
+    executeSearch();
 }
 
 function renderDbPreview() {

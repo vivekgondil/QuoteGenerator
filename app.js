@@ -16,6 +16,17 @@ let isVoiceListening = false;
 // Consumed once on startup by populateDifferentiatorKeyOptions/updateFileDropdown to restore
 // the catalog + "More Options" filter selections saved from the previous session.
 let pendingFilterRestore = JSON.parse(localStorage.getItem('searchFilterState')) || null;
+// Concepts we'd rather default the 3 filter facets to when the uploaded price list has them,
+// since they're the fields reps filter by most often. Each inner list is a set of aliases for
+// the same concept, checked in priority order; falls back to the first 3 labels otherwise.
+// Declared here (not near getDefaultFacetKeys below) for the same temporal-dead-zone reason as
+// SpeechRecognitionCtor above: initApp() calls into code that needs this before the script
+// would otherwise reach its declaration further down the file.
+const PREFERRED_FACET_ALIASES = [
+    ['billingplan', 'billingterm', 'billingcycle', 'billingtype', 'billingfrequency'],
+    ['termduration', 'duration', 'contractterm', 'subscriptionterm', 'termlength', 'term'],
+    ['segment', 'customersegment', 'marketsegment']
+];
 // Unsaved drafts do not consume a number; only saved "Quote N" names count.
 function getNextQuoteName() {
     const highestNumber = savedBaskets.reduce((highest, basket) => {
@@ -708,13 +719,15 @@ function processCSV() {
     let totalAdded = 0, totalFailed = 0, totalDuplicates = 0, totalReplaced = 0;
 
     function finalizeUpload() {
+        // Persist first: if any of the UI rendering below ever throws, the parsed catalog is
+        // still saved instead of silently vanishing on the next reload.
+        localStorage.setItem('pricingDB', JSON.stringify(pricingDatabase));
+
         statusBadge.innerHTML = `Loaded: ${totalAdded} | Replaced old: ${totalReplaced} | Skipped dupes: ${totalDuplicates} | Failed: ${totalFailed}`;
         statusBadge.className = totalAdded > 0 ? "status-badge status-success" : "status-badge status-error";
         updateMemoryDisplay();
         updateFileDropdown();
         renderDbPreview();
-
-        localStorage.setItem('pricingDB', JSON.stringify(pricingDatabase));
     }
 
     // Shared row-ingestion logic so both CSV (PapaParse) and Excel (SheetJS) sources
@@ -888,11 +901,6 @@ function getCatalogScopedDB() {
 // Concepts we'd rather default the 3 filter facets to when the uploaded price list has them,
 // since they're the fields reps filter by most often. Each inner list is a set of aliases for
 // the same concept, checked in priority order; falls back to the first 3 labels otherwise.
-const PREFERRED_FACET_ALIASES = [
-    ['billingplan', 'billingterm', 'billingcycle', 'billingtype', 'billingfrequency'],
-    ['termduration', 'duration', 'contractterm', 'subscriptionterm', 'termlength', 'term'],
-    ['segment', 'customersegment', 'marketsegment']
-];
 
 // Picks up to 3 default facet keys: the preferred concepts above (Billing Plan, Term Duration,
 // Segment) if present in this catalog's differentiator columns, then fills any remaining slots

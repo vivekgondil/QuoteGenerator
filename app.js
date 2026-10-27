@@ -33,10 +33,10 @@ localStorage.setItem('currentBasketName', currentBasketName);
 
 let taxRate = parseFloat(localStorage.getItem('taxRate'));
 if (isNaN(taxRate)) taxRate = 18;
-let includeTax = localStorage.getItem('includeTax') !== 'false';
+let includeTax = localStorage.getItem('includeTax') === 'true';
 let priceValidityDate = localStorage.getItem('priceValidityDate') || getDefaultMonthEndDate();
 let additionalConditions = localStorage.getItem('additionalConditions') || '';
-let multiYearSplitEnabled = localStorage.getItem('multiYearSplitEnabled') !== 'false';
+let multiYearSplitEnabled = localStorage.getItem('multiYearSplitEnabled') === 'true';
 
 // --- Initialization (Fixed: Runs immediately instead of waiting for delayed DOM signal) ---
 function initApp() {

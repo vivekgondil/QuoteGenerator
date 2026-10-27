@@ -885,6 +885,36 @@ function getCatalogScopedDB() {
     return activeCatalog !== 'all' ? pricingDatabase.filter(i => getCatalogId(i) === activeCatalog) : pricingDatabase;
 }
 
+// Concepts we'd rather default the 3 filter facets to when the uploaded price list has them,
+// since they're the fields reps filter by most often. Each inner list is a set of aliases for
+// the same concept, checked in priority order; falls back to the first 3 labels otherwise.
+const PREFERRED_FACET_ALIASES = [
+    ['billingplan', 'billingterm', 'billingcycle', 'billingtype', 'billingfrequency'],
+    ['termduration', 'duration', 'contractterm', 'subscriptionterm', 'termlength', 'term'],
+    ['segment', 'customersegment', 'marketsegment']
+];
+
+// Picks up to 3 default facet keys: the preferred concepts above (Billing Plan, Term Duration,
+// Segment) if present in this catalog's differentiator columns, then fills any remaining slots
+// with the next labels alphabetically.
+function getDefaultFacetKeys(sortedLabels) {
+    const cleanToLabel = new Map(sortedLabels.map(label => [label.toLowerCase().replace(/[^a-z0-9]/g, ''), label]));
+    const cleanKeys = [...cleanToLabel.keys()];
+
+    const preferred = [];
+    PREFERRED_FACET_ALIASES.forEach(aliases => {
+        let match = aliases.map(alias => cleanToLabel.get(alias)).find(Boolean);
+        if (!match) {
+            const hit = aliases.map(alias => cleanKeys.find(k => k.includes(alias))).find(Boolean);
+            match = hit ? cleanToLabel.get(hit) : null;
+        }
+        if (match && !preferred.includes(match)) preferred.push(match);
+    });
+
+    const remaining = sortedLabels.filter(label => !preferred.includes(label));
+    return [...preferred, ...remaining].slice(0, 3);
+}
+
 // Populates every "Advanced Filters" facet with the distinct differentiator columns (e.g.
 // Billing Term, Segment) found in the current catalog scope, letting the user narrow results
 // to exact column/value combinations instead of relying on free-text matching alone.
@@ -892,6 +922,7 @@ function populateDifferentiatorKeyOptions() {
     const labels = new Set();
     getCatalogScopedDB().forEach(item => (item.differentiators || []).forEach(d => labels.add(d.label)));
     const sortedLabels = [...labels].sort((a, b) => a.localeCompare(b));
+    const defaultKeys = getDefaultFacetKeys(sortedLabels);
     const restoreFacets = pendingFilterRestore ? pendingFilterRestore.facets || [] : null;
 
     [...document.querySelectorAll('.filter-facet')].forEach((facet, index) => {
@@ -906,10 +937,11 @@ function populateDifferentiatorKeyOptions() {
             keySelect.appendChild(opt);
         });
         // Priority: a restored session beats everything (even an empty/cleared choice), then
-        // the facet's own live selection, then the "first 3 keys" default for brand-new panels.
+        // the facet's own live selection, then Billing Plan/Term Duration/Segment if present,
+        // then the "first 3 keys" default for brand-new panels.
         if (restoreFacets) keySelect.value = labels.has((restoreFacets[index] || {}).key) ? restoreFacets[index].key : '';
         else if (labels.has(currentSelection)) keySelect.value = currentSelection;
-        else keySelect.value = sortedLabels[index] || '';
+        else keySelect.value = defaultKeys[index] || '';
         populateDifferentiatorValueOptions(facet);
     });
     pendingFilterRestore = null; // consumed once; later catalog/DB changes rely on live DOM state
